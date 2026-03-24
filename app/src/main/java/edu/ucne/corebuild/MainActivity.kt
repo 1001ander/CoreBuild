@@ -4,22 +4,23 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import dagger.hilt.android.AndroidEntryPoint
 import edu.ucne.corebuild.ui.theme.CoreBuildTheme
 
@@ -30,17 +31,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             CoreBuildTheme {
-                val navController = rememberNavController()
-                NavHost(
-                    navController = navController,
-                    startDestination = "home"
-                ) {
-                    composable("home") {
-                        HomeScreen(onAddClick = { navController.navigate("add") })
-                    }
-                    composable("add") {
-                        AddScreen()
-                    }
+                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    ThemeTestScreen(modifier = Modifier.padding(innerPadding))
                 }
             }
         }
@@ -48,46 +40,56 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun HomeScreen(onAddClick: () -> Unit) {
-    Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddClick,
-                containerColor = MaterialTheme.colorScheme.primary,
-                // No especificamos contentColor para que use el onPrimary del tema
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Añadir")
-            }
+fun ThemeTestScreen(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            text = "CoreBuild Theme",
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Button(onClick = { }) {
+            Text("Botón Primario")
         }
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "Core Build",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground
+        FilledTonalButton(onClick = { }) {
+            Text("Botón Secundario Tonal")
+        }
+        ElevatedButton(onClick = { }) {
+            Text("Botón Elevado")
+        }
+        Button(
+            onClick = { },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.tertiary,
+                contentColor = MaterialTheme.colorScheme.onTertiary
             )
+        ) {
+            Text("Botón Terciario")
+        }
+        OutlinedButton(onClick = { }) {
+            Text("Botón Outlined")
+        }
+        Button(
+            onClick = { },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.error,
+                contentColor = MaterialTheme.colorScheme.onError
+            )
+        ) {
+            Text("Botón de Error")
         }
     }
 }
 
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun AddScreen() {
-    Scaffold { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "Prueba de Navegación",
-                color = MaterialTheme.colorScheme.onBackground
-            )
-        }
+fun ThemeTestPreview() {
+    CoreBuildTheme(dynamicColor = false) {
+        ThemeTestScreen()
     }
 }
