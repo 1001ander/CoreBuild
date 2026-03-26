@@ -139,6 +139,8 @@ class ComponentLocalDataSource @Inject constructor() {
         Component.PSU(115, "Corsair HX1200i", "Fuente de 1200W con monitoreo digital via iCUE. Para sistemas extremos.", 350.0, "Corsair", 1200, "80 Plus Platinum", "Totalmente modular")
     )
 
+    fun getInitialData(): List<Component> = components
+
     fun getComponents(): Flow<List<Component>> = flowOf(components)
 
     fun getComponentById(id: Int): Flow<Component?> = flowOf(components.find { it.id == id })
