@@ -8,4 +8,13 @@ sealed class Screen {
 
     @Serializable
     data class Detail(val id: Int) : Screen()
+
+    @Serializable
+    data object Cart : Screen()
+
+    @Serializable
+    data object Comparator : Screen()
+
+    @Serializable
+    data object Bottleneck : Screen()
 }
