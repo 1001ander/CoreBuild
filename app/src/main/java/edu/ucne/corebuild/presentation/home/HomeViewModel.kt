@@ -4,10 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import edu.ucne.corebuild.domain.use_case.GetComponentsUseCase
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -16,29 +13,41 @@ class HomeViewModel @Inject constructor(
     private val getComponentsUseCase: GetComponentsUseCase
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(HomeUiState())
-    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+    private val _searchQuery = MutableStateFlow("")
+    private val _isLoading = MutableStateFlow(false)
 
-    init {
-        onEvent(HomeEvent.LoadComponents)
-    }
+    val uiState: StateFlow<HomeUiState> = combine(
+        getComponentsUseCase(),
+        _searchQuery,
+        _isLoading
+    ) { components, query, loading ->
+        val filtered = if (query.isBlank()) {
+            components
+        } else {
+            components.filter {
+                it.name.contains(query, ignoreCase = true) ||
+                it.category.contains(query, ignoreCase = true)
+            }
+        }
+        HomeUiState(
+            components = components,
+            filteredComponents = filtered,
+            searchQuery = query,
+            isLoading = loading
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = HomeUiState(isLoading = true)
+    )
 
     fun onEvent(event: HomeEvent) {
         when (event) {
-            HomeEvent.LoadComponents -> loadComponents()
-        }
-    }
-
-    private fun loadComponents() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            getComponentsUseCase().collect { components ->
-                _uiState.update { 
-                    it.copy(
-                        components = components,
-                        isLoading = false
-                    )
-                }
+            is HomeEvent.OnSearchQueryChange -> {
+                _searchQuery.value = event.query
+            }
+            HomeEvent.LoadComponents -> {
+                // El flujo reactivo de getComponentsUseCase ya maneja la carga
             }
         }
     }
