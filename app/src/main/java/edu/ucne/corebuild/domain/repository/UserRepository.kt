@@ -7,5 +7,6 @@ interface UserRepository {
     fun getLoggedUser(): Flow<User?>
     suspend fun login(email: String, password: String): Result<User>
     suspend fun register(user: User, password: String): Result<Unit>
+    suspend fun updateProfilePicture(userId: Int, imageUrl: String): Result<Unit>
     suspend fun logout()
 }
