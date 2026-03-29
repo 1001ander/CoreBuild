@@ -26,4 +26,8 @@ class OrderRepositoryImpl @Inject constructor(
     override suspend fun createOrder(order: Order) {
         orderDao.insertOrder(order.toEntity())
     }
+
+    override suspend fun updateOrder(order: Order) {
+        orderDao.updateOrder(order.toEntity())
+    }
 }
