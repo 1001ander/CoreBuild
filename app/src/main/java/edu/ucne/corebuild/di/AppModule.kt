@@ -53,6 +53,9 @@ object AppModule {
 
     @Provides
     fun provideCartDao(db: CoreBuildDatabase): CartDao = db.cartDao()
+    
+    @Provides
+    fun provideStatsDao(db: CoreBuildDatabase): StatsDao = db.statsDao()
 
     @Provides
     @Singleton
@@ -124,4 +127,9 @@ object AppModule {
     fun provideRemoteDataSource(api: CoreBuildApi): RemoteDataSource {
         return RemoteDataSource(api)
     }
+
+    @Provides
+    @Singleton
+    fun provideStatsRepository(statsDao: StatsDao, componentDao: ComponentDao): StatsRepository = 
+        StatsRepositoryImpl(statsDao, componentDao)
 }
