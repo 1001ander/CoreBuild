@@ -108,7 +108,7 @@ fun Component.toEntity(): ComponentEntity {
         )
         is Component.RAM -> ComponentEntity(
             id = id, name = name, description = description, price = price, category = category,
-            componentType = "RAM", brand = brand, motherboardRamType = type, ramCapacity = capacity,
+            componentType = "RAM", brand = brand, ramType = type, ramCapacity = capacity,
             ramSpeed = speed, ramLatency = latency, voltage = voltage, hasRGB = hasRGB, imageUrl = imageUrl
         )
         is Component.PSU -> ComponentEntity(
