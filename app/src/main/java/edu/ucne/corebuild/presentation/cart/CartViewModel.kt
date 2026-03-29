@@ -6,8 +6,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import edu.ucne.corebuild.domain.buildscore.BuildScoreCalculator
 import edu.ucne.corebuild.domain.compatibility.CompatibilityEngine
 import edu.ucne.corebuild.domain.model.Order
+import edu.ucne.corebuild.domain.model.OrderMode
 import edu.ucne.corebuild.domain.repository.CartRepository
 import edu.ucne.corebuild.domain.repository.OrderRepository
+import edu.ucne.corebuild.domain.repository.UserRepository
 import edu.ucne.corebuild.presentation.notifications.NotificationHelper
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
@@ -19,6 +21,7 @@ import javax.inject.Inject
 class CartViewModel @Inject constructor(
     private val cartRepository: CartRepository,
     private val orderRepository: OrderRepository,
+    private val userRepository: UserRepository,
     private val compatibilityEngine: CompatibilityEngine,
     private val buildScoreCalculator: BuildScoreCalculator,
     private val notificationHelper: NotificationHelper
@@ -26,13 +29,26 @@ class CartViewModel @Inject constructor(
 
     private val _snackbarMessage = MutableStateFlow<String?>(null)
     private val _showOrderConfirmation = MutableStateFlow(false)
+    private val _navigateToLogin = MutableStateFlow(false)
+    private val _navigateToThanks = MutableStateFlow(false)
 
     val uiState: StateFlow<CartUiState> = combine(
         cartRepository.getCartItems(),
         cartRepository.getCartTotal(),
+        userRepository.getLoggedUser(),
         _snackbarMessage,
-        _showOrderConfirmation
-    ) { items, total, message, showConfirmation ->
+        _showOrderConfirmation,
+        _navigateToLogin,
+        _navigateToThanks
+    ) { flows ->
+        val items = flows[0] as List<edu.ucne.corebuild.domain.model.CartItem>
+        val total = flows[1] as Double
+        val user = flows[2] as edu.ucne.corebuild.domain.model.User?
+        val message = flows[3] as String?
+        val showConfirmation = flows[4] as Boolean
+        val navLogin = flows[5] as Boolean
+        val navThanks = flows[6] as Boolean
+        
         val score = buildScoreCalculator.calculateScore(items)
         CartUiState(
             cartItems = items,
@@ -43,7 +59,10 @@ class CartViewModel @Inject constructor(
             buildScore = score.score,
             buildLabel = score.label,
             buildRecommendations = score.recommendations,
-            isLoading = false
+            isLoading = false,
+            isLogged = user != null,
+            navigateToLogin = navLogin,
+            navigateToThanks = navThanks
         )
     }.stateIn(
         scope = viewModelScope,
@@ -74,26 +93,40 @@ class CartViewModel @Inject constructor(
                     _snackbarMessage.value = "Carrito vaciado"
                 }
                 CartEvent.OnCheckout -> {
+                    if (!uiState.value.isLogged) {
+                        _navigateToLogin.value = true
+                        return@launch
+                    }
+
                     val currentItems = uiState.value.cartItems
                     if (currentItems.isNotEmpty()) {
+                        val totalPrice = uiState.value.total
+                        val orderComponents = currentItems.flatMap { item -> 
+                            List(item.quantity) { item.component } 
+                        }
+                        
+
                         val order = Order(
-                            components = currentItems.flatMap { item -> 
-                                List(item.quantity) { item.component } 
-                            },
-                            totalPrice = uiState.value.total,
-                            date = Date()
+                            components = orderComponents,
+                            totalPrice = totalPrice,
+                            date = Date(),
+                            status = OrderMode.CREATED
                         )
                         orderRepository.createOrder(order)
                         cartRepository.clearCart()
                         
-                        // Flujo de simulación de entrega
                         _showOrderConfirmation.value = true
                         _snackbarMessage.value = "¡Pedido realizado con éxito!"
                         
                         viewModelScope.launch {
-                            delay(5000) // Simular preparación y entrega
+                            delay(5000)
+                            val orders = orderRepository.getAllOrders().first()
+                            val lastOrder = orders.maxByOrNull { it.id }
+                            if (lastOrder != null) {
+                                orderRepository.createOrder(lastOrder.copy(status = OrderMode.ENVIADO))
+                            }
+                            
                             notificationHelper.sendOrderDeliveredNotification()
-                            delay(2000)
                             _showOrderConfirmation.value = false
                         }
                     } else {
@@ -102,6 +135,10 @@ class CartViewModel @Inject constructor(
                 }
                 CartEvent.DismissSnackbar -> {
                     _snackbarMessage.value = null
+                }
+                CartEvent.ResetNavigation -> {
+                   _navigateToLogin.value = false
+                   _navigateToThanks.value = false
                 }
             }
         }
