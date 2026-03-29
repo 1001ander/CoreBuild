@@ -31,7 +31,9 @@ import edu.ucne.corebuild.domain.model.CartItem
 fun CartScreen(
     viewModel: CartViewModel = hiltViewModel(),
     onBackClick: () -> Unit,
-    onMenuClick: () -> Unit
+    onMenuClick: () -> Unit,
+    onNavigateToLogin: () -> Unit,
+    onNavigateToThanks: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -40,6 +42,20 @@ fun CartScreen(
         state.snackbarMessage?.let {
             snackbarHostState.showSnackbar(it)
             viewModel.onEvent(CartEvent.DismissSnackbar)
+        }
+    }
+
+    LaunchedEffect(state.navigateToLogin) {
+        if (state.navigateToLogin) {
+            onNavigateToLogin()
+            viewModel.onEvent(CartEvent.ResetNavigation)
+        }
+    }
+
+    LaunchedEffect(state.navigateToThanks) {
+        if (state.navigateToThanks) {
+            onNavigateToThanks()
+            viewModel.onEvent(CartEvent.ResetNavigation)
         }
     }
 
