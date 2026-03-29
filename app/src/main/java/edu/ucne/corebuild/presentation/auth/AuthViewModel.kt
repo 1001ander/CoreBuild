@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import edu.ucne.corebuild.domain.model.User
+import edu.ucne.corebuild.domain.repository.OrderRepository
 import edu.ucne.corebuild.domain.repository.UserRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -11,7 +12,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val orderRepository: OrderRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -19,12 +21,33 @@ class AuthViewModel @Inject constructor(
 
     init {
         observeLoggedUser()
+        observeOrders()
     }
 
     private fun observeLoggedUser() {
         viewModelScope.launch {
             userRepository.getLoggedUser().collect { user ->
-                _uiState.update { it.copy(user = user, isLogged = user != null) }
+                _uiState.update { 
+                    it.copy(
+                        user = user, 
+                        isLogged = user != null, 
+                        isCheckingSession = false
+                    ) 
+                }
+            }
+        }
+    }
+
+    private fun observeOrders() {
+        viewModelScope.launch {
+            orderRepository.getAllOrders().collect { orders ->
+                val totalSpent = orders.sumOf { it.totalPrice }
+                _uiState.update { 
+                    it.copy(
+                        totalOrdersCount = orders.size,
+                        totalSpent = totalSpent
+                    ) 
+                }
             }
         }
     }
@@ -34,6 +57,7 @@ class AuthViewModel @Inject constructor(
             is AuthEvent.OnLogin -> login(event.email, event.pass)
             is AuthEvent.OnRegister -> register(event.name, event.email, event.pass)
             is AuthEvent.OnLogout -> logout()
+            is AuthEvent.OnUpdateProfilePicture -> updateProfilePicture(event.imageUrl)
             is AuthEvent.DismissError -> _uiState.update { it.copy(error = null) }
         }
     }
@@ -68,10 +92,19 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    private fun updateProfilePicture(imageUrl: String) {
+        viewModelScope.launch {
+            val currentUser = _uiState.value.user
+            if (currentUser != null && currentUser.id != null) {
+                userRepository.updateProfilePicture(currentUser.id, imageUrl)
+            }
+        }
+    }
+
     private fun logout() {
         viewModelScope.launch {
             userRepository.logout()
-            _uiState.update { it.copy(user = null, isLogged = false) }
+            _uiState.update { it.copy(user = null, isLogged = false, isCheckingSession = false) }
         }
     }
 }
