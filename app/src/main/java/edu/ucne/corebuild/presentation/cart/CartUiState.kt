@@ -11,5 +11,8 @@ data class CartUiState(
     val showOrderConfirmation: Boolean = false,
     val buildScore: Int = 0,
     val buildLabel: String = "",
-    val buildRecommendations: List<String> = emptyList()
+    val buildRecommendations: List<String> = emptyList(),
+    val isLogged: Boolean = false,
+    val navigateToLogin: Boolean = false,
+    val navigateToThanks: Boolean = false
 )
