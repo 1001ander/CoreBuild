@@ -15,6 +15,9 @@ interface OrderDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrder(order: OrderEntity)
 
+    @Update
+    suspend fun updateOrder(order: OrderEntity)
+
     @Delete
     suspend fun deleteOrder(order: OrderEntity)
 }

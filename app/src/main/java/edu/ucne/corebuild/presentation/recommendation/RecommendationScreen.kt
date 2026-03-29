@@ -64,7 +64,7 @@ fun RecommendationScreen(
 
             // Prioritize Section
             Text(
-                "Priorizar Rendimiento de:", 
+                "Configuración Especial:", 
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -73,21 +73,20 @@ fun RecommendationScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                PriorityChip(
-                    label = "Procesador (CPU)",
-                    selected = uiState.priority == "CPU",
-                    onClick = { 
-                        viewModel.onEvent(RecommendationEvent.OnPriorityChange(if (uiState.priority == "CPU") null else "CPU"))
-                    },
-                    modifier = Modifier.weight(1f)
-                )
-                PriorityChip(
-                    label = "Gráfica (GPU)",
+                FilterChip(
                     selected = uiState.priority == "GPU",
                     onClick = { 
                         viewModel.onEvent(RecommendationEvent.OnPriorityChange(if (uiState.priority == "GPU") null else "GPU"))
                     },
-                    modifier = Modifier.weight(1f)
+                    label = { 
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Speed, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Priorizar Gráfica (GPU)") 
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium
                 )
             }
 
@@ -139,22 +138,6 @@ fun RecommendationScreen(
             }
         }
     }
-}
-
-@Composable
-fun PriorityChip(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = { Text(label, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
-        modifier = modifier,
-        shape = MaterialTheme.shapes.medium
-    )
 }
 
 @Composable
