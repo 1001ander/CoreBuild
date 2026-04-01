@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CompareArrows
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,7 +30,7 @@ import edu.ucne.corebuild.domain.model.Component
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ComparatorScreen(
-    onBackClick: () -> Unit,
+    onMenuClick: () -> Unit,
     viewModel: ComparatorViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -39,8 +40,8 @@ fun ComparatorScreen(
             TopAppBar(
                 title = { Text("Comparador PRO") },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
+                    IconButton(onClick = onMenuClick) {
+                        Icon(Icons.Default.Menu, contentDescription = "Menú")
                     }
                 }
             )
