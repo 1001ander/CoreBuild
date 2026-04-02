@@ -54,6 +54,8 @@ import edu.ucne.corebuild.presentation.orders.OrderDetailScreen
 import edu.ucne.corebuild.presentation.orders.OrdersScreen
 import edu.ucne.corebuild.presentation.performance.PerformanceScreen
 import edu.ucne.corebuild.presentation.recommendation.RecommendationScreen
+import edu.ucne.corebuild.presentation.smartbuild.BuildSelectorScreen
+import edu.ucne.corebuild.presentation.smartbuild.SmartBuildScreen
 import edu.ucne.corebuild.ui.theme.CoreBuildTheme
 import edu.ucne.corebuild.ui.theme.ThemeMode
 import edu.ucne.corebuild.ui.theme.ThemeSettings
@@ -243,10 +245,10 @@ fun CoreBuildAppContent(
                 DrawerItem(
                     icon = Icons.Default.AutoAwesome,
                     label = "Recomendador IA",
-                    selected = currentRoute?.contains("Recommendation") == true,
+                    selected = currentRoute?.contains("BuildSelector") == true || currentRoute?.contains("Recommendation") == true || currentRoute?.contains("SmartBuild") == true,
                     onClick = {
                         scope.launch { drawerState.close() }
-                        navController.navigate(Screen.Recommendation)
+                        navController.navigate(Screen.BuildSelector)
                     }
                 )
                 
@@ -385,10 +387,23 @@ fun CoreBuildAppContent(
             composable<Screen.Performance> {
                 PerformanceScreen(onMenuClick = { scope.launch { drawerState.open() } })
             }
+            composable<Screen.BuildSelector> {
+                BuildSelectorScreen(
+                    onRecommendationClick = { navController.navigate(Screen.Recommendation) },
+                    onSmartBuildClick = { navController.navigate(Screen.SmartBuild) }
+                )
+            }
             composable<Screen.Recommendation> {
                 RecommendationScreen(
                     onMenuClick = { scope.launch { drawerState.open() } },
                     onComponentClick = { id -> navController.navigate(Screen.Detail(id)) }
+                )
+            }
+            composable<Screen.SmartBuild> {
+                SmartBuildScreen(
+                    onBackClick = { navController.popBackStack() },
+                    onComponentClick = { id -> navController.navigate(Screen.Detail(id)) },
+                    onCartClick = { navController.navigate(Screen.Cart) }
                 )
             }
         }
