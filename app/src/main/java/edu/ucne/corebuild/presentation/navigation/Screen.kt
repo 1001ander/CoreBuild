@@ -19,6 +19,9 @@ sealed class Screen {
     data object Bottleneck : Screen()
 
     @Serializable
+    data object Performance : Screen()
+
+    @Serializable
     data object Favorites : Screen()
 
     @Serializable
