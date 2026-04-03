@@ -12,6 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import edu.ucne.corebuild.domain.model.Component
+import edu.ucne.corebuild.presentation.components.PerformanceBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -155,6 +156,8 @@ fun ResultCard(percentage: Double, status: String) {
             modifier = Modifier.padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            val performanceValue = ((100f - percentage) / 100f).toFloat()
+            
             Text(
                 text = "${String.format("%.1f", percentage)}%",
                 style = MaterialTheme.typography.displayMedium,
@@ -167,12 +170,9 @@ fun ResultCard(percentage: Double, status: String) {
                 color = if (percentage < 10) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error
             )
             Spacer(modifier = Modifier.height(16.dp))
-            LinearProgressIndicator(
-                progress = { (percentage / 100).toFloat() },
-                modifier = Modifier.fillMaxWidth().height(8.dp),
-                color = if (percentage < 10) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error,
-                trackColor = MaterialTheme.colorScheme.outlineVariant
-            )
+            
+            PerformanceBar(value = performanceValue)
+
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "Un cuello de botella inferior al 10% se considera ideal.",

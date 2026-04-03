@@ -1,5 +1,7 @@
 package edu.ucne.corebuild.presentation.smartbuild
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -28,6 +30,9 @@ import coil.compose.SubcomposeAsyncImage
 import kotlinx.coroutines.flow.collectLatest
 import edu.ucne.corebuild.domain.model.Component
 import edu.ucne.corebuild.domain.smartbuilder.SmartBuild
+import edu.ucne.corebuild.presentation.components.AnimatedFilterChip
+import edu.ucne.corebuild.presentation.components.AnimatedListItem
+import edu.ucne.corebuild.presentation.components.bounceClick
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,7 +70,10 @@ fun SmartBuildScreen(
             TopAppBar(
                 title = { Text("Armador Inteligente") },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(
+                        onClick = onBackClick,
+                        modifier = Modifier.bounceClick()
+                    ) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
                     }
                 }
@@ -73,37 +81,46 @@ fun SmartBuildScreen(
         }
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-            when (uiState) {
-                is SmartBuildUiState.Idle -> {
-                    SmartBuildForm(
-                        formState = formState,
-                        viewModel = viewModel,
-                        onToggleCpu = viewModel::toggleCpuMode,
-                        onToggleGpu = viewModel::toggleGpuMode,
-                        onSelectCpu = viewModel::selectCpu,
-                        onSelectGpu = viewModel::selectGpu,
-                        onBuildClick = viewModel::buildNow
-                    )
-                }
-                is SmartBuildUiState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                }
-                is SmartBuildUiState.Success -> {
-                    SmartBuildResult(
-                        build = (uiState as SmartBuildUiState.Success).build,
-                        onReset = viewModel::resetToForm,
-                        onSaveBuild = viewModel::requestSaveBuild,
-                        onComponentClick = onComponentClick
-                    )
-                }
-                is SmartBuildUiState.Error -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            (uiState as SmartBuildUiState.Error).message,
-                            color = MaterialTheme.colorScheme.error
+            AnimatedContent(
+                targetState = uiState,
+                transitionSpec = {
+                    fadeIn(tween(300)) togetherWith fadeOut(tween(200))
+                },
+                contentAlignment = Alignment.Center,
+                label = "SmartBuildState"
+            ) { state ->
+                when (state) {
+                    is SmartBuildUiState.Idle -> {
+                        SmartBuildForm(
+                            formState = formState,
+                            viewModel = viewModel,
+                            onToggleCpu = viewModel::toggleCpuMode,
+                            onToggleGpu = viewModel::toggleGpuMode,
+                            onSelectCpu = viewModel::selectCpu,
+                            onSelectGpu = viewModel::selectGpu,
+                            onBuildClick = viewModel::buildNow
                         )
+                    }
+                    is SmartBuildUiState.Loading -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                    is SmartBuildUiState.Success -> {
+                        SmartBuildResult(
+                            build = state.build,
+                            onReset = viewModel::resetToForm,
+                            onSaveBuild = viewModel::requestSaveBuild,
+                            onComponentClick = onComponentClick
+                        )
+                    }
+                    is SmartBuildUiState.Error -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text(
+                                state.message,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
                     }
                 }
             }
@@ -140,17 +157,19 @@ fun SmartBuildForm(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            FilterChip(
+            AnimatedFilterChip(
                 selected = formState.cpuModeEnabled,
                 onClick = onToggleCpu,
                 label = { Text("Procesador (CPU)") },
-                leadingIcon = { if (formState.cpuModeEnabled) Icon(Icons.Default.Check, null) }
+                leadingIcon = { if (formState.cpuModeEnabled) Icon(Icons.Default.Check, null) },
+                modifier = Modifier.bounceClick()
             )
-            FilterChip(
+            AnimatedFilterChip(
                 selected = formState.gpuModeEnabled,
                 onClick = onToggleGpu,
                 label = { Text("Tarjeta Gráfica (GPU)") },
-                leadingIcon = { if (formState.gpuModeEnabled) Icon(Icons.Default.Check, null) }
+                leadingIcon = { if (formState.gpuModeEnabled) Icon(Icons.Default.Check, null) },
+                modifier = Modifier.bounceClick()
             )
         }
 
@@ -184,11 +203,13 @@ fun SmartBuildForm(
                                 horizontalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 items(group.items, key = { "cpu-${it.id}" }) { cpu ->
-                                    SmartBuildComponentCard(
-                                        component = cpu,
-                                        isSelected = formState.selectedCpu == cpu,
-                                        onClick = { onSelectCpu(cpu) }
-                                    )
+                                    AnimatedListItem {
+                                        SmartBuildComponentCard(
+                                            component = cpu,
+                                            isSelected = formState.selectedCpu == cpu,
+                                            onClick = { onSelectCpu(cpu) }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -222,11 +243,13 @@ fun SmartBuildForm(
                                 horizontalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 items(group.items, key = { "gpu-${it.id}" }) { gpu ->
-                                    SmartBuildComponentCard(
-                                        component = gpu,
-                                        isSelected = formState.selectedGpu == gpu,
-                                        onClick = { onSelectGpu(gpu) }
-                                    )
+                                    AnimatedListItem {
+                                        SmartBuildComponentCard(
+                                            component = gpu,
+                                            isSelected = formState.selectedGpu == gpu,
+                                            onClick = { onSelectGpu(gpu) }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -240,7 +263,8 @@ fun SmartBuildForm(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
-                .height(56.dp),
+                .height(56.dp)
+                .bounceClick(),
             enabled = formState.isReadyToBuild,
             shape = MaterialTheme.shapes.large
         ) {
@@ -251,8 +275,6 @@ fun SmartBuildForm(
     }
 }
 
-// ── Card horizontal estilo Home (tamaño reducido) ────────────────────────────
-
 @Composable
 fun SmartBuildComponentCard(
     component: Component,
@@ -262,6 +284,7 @@ fun SmartBuildComponentCard(
     Card(
         modifier = Modifier
             .width(130.dp)
+            .bounceClick()
             .clickable { onClick() }
             .then(
                 if (isSelected) Modifier.border(
@@ -336,8 +359,6 @@ fun SmartBuildComponentCard(
     }
 }
 
-// ── Componentes auxiliares ───────────────────────────────────────────────────
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SectionSearchHeader(
@@ -370,7 +391,10 @@ private fun SectionSearchHeader(
             },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = { onSearchChange("") }) {
+                    IconButton(
+                        onClick = { onSearchChange("") },
+                        modifier = Modifier.bounceClick()
+                    ) {
                         Icon(Icons.Default.Close, contentDescription = "Limpiar", modifier = Modifier.size(16.dp))
                     }
                 }
@@ -423,60 +447,6 @@ private fun EmptySearchResult(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun ComponentSelectionItem(
-    component: Component,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .border(
-                width = if (isSelected) 2.dp else 0.dp,
-                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                shape = MaterialTheme.shapes.medium
-            ),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected)
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-            else
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
-    ) {
-        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            AsyncImage(
-                model = component.imageUrl ?: "https://via.placeholder.com/150",
-                contentDescription = null,
-                modifier = Modifier.size(50.dp).clip(MaterialTheme.shapes.small),
-                contentScale = ContentScale.Crop
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    component.name,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    "$${component.price}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-            if (isSelected) {
-                Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.primary)
-            }
-        }
-    }
-}
-
-// ── Pantalla de resultado ────────────────────────────────────────────────────
-
-@Composable
 fun SmartBuildResult(
     build: SmartBuild,
     onReset: () -> Unit,
@@ -497,23 +467,25 @@ fun SmartBuildResult(
                 )
                 if (build.warnings.isNotEmpty()) {
                     build.warnings.forEach { warning ->
-                        Card(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer
-                            )
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(Icons.Default.Warning, null, tint = MaterialTheme.colorScheme.error)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    warning,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onErrorContainer
+                        AnimatedListItem {
+                            Card(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.errorContainer
                                 )
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.Warning, null, tint = MaterialTheme.colorScheme.error)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        warning,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                }
                             }
                         }
                     }
@@ -527,8 +499,20 @@ fun SmartBuildResult(
                     color = MaterialTheme.colorScheme.primary
                 )
             }
-            build.anchorCpu?.let { item { ResultItem(it, true, onComponentClick) } }
-            build.anchorGpu?.let { item { ResultItem(it, true, onComponentClick) } }
+            build.anchorCpu?.let { cpu -> 
+                item { 
+                    AnimatedListItem {
+                        ResultItem(cpu, true, onComponentClick) 
+                    }
+                } 
+            }
+            build.anchorGpu?.let { gpu -> 
+                item { 
+                    AnimatedListItem {
+                        ResultItem(gpu, true, onComponentClick) 
+                    }
+                } 
+            }
 
             item {
                 Spacer(modifier = Modifier.height(8.dp))
@@ -539,7 +523,9 @@ fun SmartBuildResult(
                 )
             }
             items(build.suggested) { component ->
-                ResultItem(component, false, onComponentClick)
+                AnimatedListItem {
+                    ResultItem(component, false, onComponentClick)
+                }
             }
 
             item {
@@ -569,14 +555,14 @@ fun SmartBuildResult(
         ) {
             OutlinedButton(
                 onClick = onReset,
-                modifier = Modifier.weight(1f).height(56.dp),
+                modifier = Modifier.weight(1f).height(56.dp).bounceClick(),
                 shape = MaterialTheme.shapes.large
             ) {
                 Text("Cambiar anclas")
             }
             Button(
                 onClick = onSaveBuild,
-                modifier = Modifier.weight(1f).height(56.dp),
+                modifier = Modifier.weight(1f).height(56.dp).bounceClick(),
                 shape = MaterialTheme.shapes.large
             ) {
                 Text("Guardar build")
@@ -592,7 +578,7 @@ fun ResultItem(
     onClick: (Int) -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth().clickable { onClick(component.id) },
+        modifier = Modifier.fillMaxWidth().bounceClick().clickable { onClick(component.id) },
         colors = CardDefaults.cardColors(
             containerColor = if (isAnchor)
                 MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f)
@@ -637,8 +623,6 @@ fun ResultItem(
         }
     }
 }
-
-// ── Diálogo de confirmación para guardar build ───────────────────────────────
 
 @Composable
 fun SaveBuildDialog(
@@ -699,14 +683,20 @@ fun SaveBuildDialog(
             }
         },
         confirmButton = {
-            Button(onClick = onConfirm) {
+            Button(
+                onClick = onConfirm,
+                modifier = Modifier.bounceClick()
+            ) {
                 Icon(Icons.Default.ShoppingCart, null)
                 Spacer(modifier = Modifier.width(6.dp))
                 Text("Añadir al carrito")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.bounceClick()
+            ) {
                 Text("Cancelar")
             }
         }

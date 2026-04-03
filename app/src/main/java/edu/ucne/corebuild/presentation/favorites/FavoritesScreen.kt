@@ -15,6 +15,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import edu.ucne.corebuild.presentation.components.AnimatedListItem
+import edu.ucne.corebuild.presentation.components.bounceClick
 import edu.ucne.corebuild.presentation.home.ComponentItem
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,7 +33,10 @@ fun FavoritesScreen(
             TopAppBar(
                 title = { Text("Mis Favoritos") },
                 navigationIcon = {
-                    IconButton(onClick = onMenuClick) {
+                    IconButton(
+                        onClick = onMenuClick,
+                        modifier = Modifier.bounceClick()
+                    ) {
                         Icon(Icons.Default.Menu, contentDescription = "Menú")
                     }
                 }
@@ -64,19 +69,15 @@ fun FavoritesScreen(
                     )
                 }
             } else {
-                AnimatedVisibility(
-                    visible = true,
-                    enter = fadeIn(),
-                    modifier = Modifier.fillMaxSize()
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = 16.dp)
-                    ) {
-                        items(
-                            items = state.favorites,
-                            key = { it.id }
-                        ) { component ->
+                    items(
+                        items = state.favorites,
+                        key = { it.id }
+                    ) { component ->
+                        AnimatedListItem {
                             ComponentItem(
                                 component = component,
                                 onClick = { onComponentClick(component.id) }
