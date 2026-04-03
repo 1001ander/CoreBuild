@@ -21,6 +21,9 @@ interface ComponentDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(components: List<ComponentEntity>)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(entities: List<ComponentEntity>)
+
     @Query("SELECT COUNT(*) FROM components")
     suspend fun getCount(): Int
 }
