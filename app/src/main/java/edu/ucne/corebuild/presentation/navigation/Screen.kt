@@ -50,4 +50,7 @@ sealed class Screen {
 
     @Serializable
     data object Thanks : Screen()
+
+    @Serializable
+    data object Overview : Screen()
 }
