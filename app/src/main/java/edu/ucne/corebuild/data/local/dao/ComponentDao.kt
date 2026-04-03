@@ -1,5 +1,6 @@
 package edu.ucne.corebuild.data.local.dao
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -21,6 +22,12 @@ interface ComponentDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(components: List<ComponentEntity>)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(entities: List<ComponentEntity>)
+
     @Query("SELECT COUNT(*) FROM components")
     suspend fun getCount(): Int
+
+    @Query("SELECT * FROM components ORDER BY id ASC")
+    fun getComponentsPaged(): PagingSource<Int, ComponentEntity>
 }
