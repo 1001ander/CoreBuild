@@ -100,7 +100,6 @@ class SyncManager @Inject constructor(
         } catch (e: Exception) { }
     }
 
-    // Métodos auxiliares para imágenes (copiados del repo para mantener la funcionalidad)
     private fun determineCpuImage(name: String, gen: String): String? {
         val search = "$name $gen".lowercase()
         val nameOnly = name.lowercase()
@@ -153,7 +152,15 @@ class SyncManager @Inject constructor(
 
     private fun determineMotherboardImage(name: String): String? {
         val search = name.lowercase()
-        return if (search.contains("b550") && search.contains("tomahawk")) "https://res.cloudinary.com/dsnaidobx/image/upload/v1774789871/imagen_2026-03-29_091110311_unor0y.png" else null
+        return when {
+            search.contains("b550") && search.contains("tomahawk") -> 
+                "https://res.cloudinary.com/dsnaidobx/image/upload/q_auto/f_auto/v1775335932/imagen_2026-04-04_165211818_aniu8s.png"
+            search.contains("x570") && search.contains("steel") && search.contains("legend") -> 
+                "https://res.cloudinary.com/dsnaidobx/image/upload/q_auto/f_auto/v1775335986/imagen_2026-04-04_165305611_pxlc39.png"
+            search.contains("a620m") && search.contains("tuf") -> 
+                "https://res.cloudinary.com/dsnaidobx/image/upload/q_auto/f_auto/v1775336077/imagen_2026-04-04_165437283_qwb80j.png"
+            else -> null
+        }
     }
 
     private fun determineRamImage(name: String): String? {
