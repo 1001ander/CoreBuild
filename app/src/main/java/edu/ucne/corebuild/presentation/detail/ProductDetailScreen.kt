@@ -426,7 +426,9 @@ fun SpecificComponentDetails(component: Component) {
                     DetailRow("Marca", component.brand)
                     DetailRow("Chipset", component.chipset)
                     DetailRow("VRAM", "${component.vram} ${component.vramType}")
-                    DetailRow("Consumo", "${component.consumptionWatts}W")
+                    // Limpieza proactiva de la 'W' para evitar duplicados como 'WW'
+                    val cleanWatts = component.consumptionWatts.replace("W", "", ignoreCase = true).trim()
+                    DetailRow("Consumo", "${cleanWatts}W")
                     component.recommendedPSU?.let {
                         DetailRow("Fuente Recomendada", it)
                     }
