@@ -85,6 +85,7 @@ sealed class Component {
         @SerialName("ram_type_internal")
         val type: String,
         val capacity: String,
+        val configuration: String, // Nueva propiedad para "2x8GB", "2x16GB", etc.
         val speed: String,
         val latency: String,
         val voltage: String? = null,
