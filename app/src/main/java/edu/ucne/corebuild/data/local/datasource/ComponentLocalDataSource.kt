@@ -25,16 +25,16 @@ class ComponentLocalDataSource @Inject constructor() {
             Component.CPU(47, "AMD Ryzen 7 9800X3D", "El rey indiscutible del gaming AM5 con arquitectura Zen 5.", 520.0, "AMD", "AM5", "Zen 5", 8, 16, "4.7 GHz", "5.2 GHz", "120W"),
 
             // GPUS NVIDIA (49-63)
-            Component.GPU(49, "NVIDIA GeForce GTX 1660 Super", "Excelente para 1080p en calidad media-alta.", 180.0, "NVIDIA", "TU116", "6GB", "GDDR6", consumptionWatts = "125W", recommendedPSU = "450W"),
-            Component.GPU(51, "NVIDIA GeForce RTX 3060", "Gama media con generosa VRAM de 12GB. Ideal 1080p.", 290.0, "NVIDIA", "GA106", "12GB", "GDDR6", consumptionWatts = "170W", recommendedPSU = "550W"),
-            Component.GPU(57, "NVIDIA GeForce RTX 4070 Super", "Ada Lovelace con DLSS 3. Excelente para 1440p.", 620.0, "NVIDIA", "AD104", "12GB", "GDDR6X", consumptionWatts = "220W", recommendedPSU = "700W"),
-            Component.GPU(59, "NVIDIA GeForce RTX 4090", "La GPU de consumo más poderosa del mundo. 24GB VRAM.", 1800.0, "NVIDIA", "AD102", "24GB", "GDDR6X", consumptionWatts = "450W", recommendedPSU = "850W"),
-            Component.GPU(63, "NVIDIA GeForce RTX 5090", "Máximo dominio en 4K, 8K y AI. 32GB GDDR7.", 2200.0, "NVIDIA", "GB202", "32GB", "GDDR7", consumptionWatts = "575W", recommendedPSU = "1000W"),
+            Component.GPU(49, "NVIDIA GeForce GTX 1660 Super", "Excelente para 1080p en calidad media-alta.", 180.0, "NVIDIA", "TU116", "6GB", "GDDR6", consumptionWatts = "125", recommendedPSU = "450W"),
+            Component.GPU(51, "NVIDIA GeForce RTX 3060", "Gama media con generosa VRAM de 12GB. Ideal 1080p.", 290.0, "NVIDIA", "GA106", "12GB", "GDDR6", consumptionWatts = "170", recommendedPSU = "550W"),
+            Component.GPU(57, "NVIDIA GeForce RTX 4070 Super", "Ada Lovelace con DLSS 3. Excelente para 1440p.", 620.0, "NVIDIA", "AD104", "12GB", "GDDR6X", consumptionWatts = "220", recommendedPSU = "700W"),
+            Component.GPU(59, "NVIDIA GeForce RTX 4090", "La GPU de consumo más poderosa del mundo. 24GB VRAM.", 1800.0, "NVIDIA", "AD102", "24GB", "GDDR6X", consumptionWatts = "450", recommendedPSU = "850W"),
+            Component.GPU(63, "NVIDIA GeForce RTX 5090", "Máximo dominio en 4K, 8K y AI. 32GB GDDR7.", 2200.0, "NVIDIA", "GB202", "32GB", "GDDR7", consumptionWatts = "575", recommendedPSU = "1000W"),
 
             // GPUS AMD (64-76)
-            Component.GPU(64, "AMD Radeon RX 580", "GPU clásica económica para presupuestos limitados.", 90.0, "AMD", "Polaris 20", "8GB", "GDDR5", consumptionWatts = "185W", recommendedPSU = "500W"),
-            Component.GPU(67, "AMD Radeon RX 6700 XT", "RDNA 2 de gama media-alta. Excelente para 1440p.", 330.0, "AMD", "Navi 22", "12GB", "GDDR6", consumptionWatts = "230W", recommendedPSU = "650W"),
-            Component.GPU(74, "AMD Radeon RX 7900 XTX", "La GPU más potente de Radeon. 24GB GDDR6.", 950.0, "AMD", "Navi 31", "24GB", "GDDR6", consumptionWatts = "355W", recommendedPSU = "850W"),
+            Component.GPU(64, "AMD Radeon RX 580", "GPU clásica económica para presupuestos limitados.", 90.0, "AMD", "Polaris 20", "8GB", "GDDR5", consumptionWatts = "185", recommendedPSU = "500W"),
+            Component.GPU(67, "AMD Radeon RX 6700 XT", "RDNA 2 de gama media-alta. Excelente para 1440p.", 330.0, "AMD", "Navi 22", "12GB", "GDDR6", consumptionWatts = "230", recommendedPSU = "650W"),
+            Component.GPU(74, "AMD Radeon RX 7900 XTX", "La GPU más potente de Radeon. 24GB GDDR6.", 950.0, "AMD", "Navi 31", "24GB", "GDDR6", consumptionWatts = "355", recommendedPSU = "850W"),
 
             // MOTHERBOARDS (77-91)
             Component.Motherboard(77, "ASUS Prime H510M", "Placa económica LGA1200 para Intel 10a/11a Gen.", 80.0, "ASUS", "LGA1200", "H510", "Micro-ATX", "DDR4"),
@@ -43,9 +43,9 @@ class ComponentLocalDataSource @Inject constructor() {
             Component.Motherboard(91, "ASRock X870E Nova WiFi", "Última generación para Ryzen 9000 con WiFi 7.", 500.0, "ASRock", "AM5", "X870E", "ATX", "DDR5"),
 
             // RAM (92-105)
-            Component.RAM(92, "Corsair Vengeance LPX 16GB", "DDR4-3200 de perfil bajo y alta compatibilidad.", 70.0, "Corsair", "DDR4", "16GB (2x8GB)", "3200 MHz", "CL16"),
-            Component.RAM(101, "G.Skill Trident Z5 RGB 32GB", "DDR5-6000 premium con latencia ultra baja CL30.", 180.0, "G.Skill", "DDR5", "32GB (2x16GB)", "6000 MHz", "CL30"),
-            Component.RAM(105, "Corsair Dominator Platinum 128GB", "RAM DDR5 profesional para workstations extremas.", 750.0, "Corsair", "DDR5", "128GB (2x64GB)", "6200 MHz", "CL32"),
+            Component.RAM(92, "Corsair Vengeance LPX 16GB", "DDR4-3200 de perfil bajo y alta compatibilidad.", 70.0, "Corsair", "DDR4", "16GB (2x8GB)", "16GB (2x8GB)", "3200 MHz", "CL16"),
+            Component.RAM(101, "G.Skill Trident Z5 RGB 32GB", "DDR5-6000 premium con latencia ultra baja CL30.", 180.0, "G.Skill", "DDR5", "32GB (2x16GB)", "32GB (2x16GB)", "6000 MHz", "CL30"),
+            Component.RAM(105, "Corsair Dominator Platinum 128GB", "RAM DDR5 profesional para workstations extremas.", 750.0, "Corsair", "DDR5", "128GB (2x64GB)", "128GB (2x64GB)", "6200 MHz", "CL32"),
 
             // PSU (106-115)
             Component.PSU(110, "Seasonic Focus GX-750", "Calidad excepcional con ventilador FDB silencioso.", 140.0, "Seasonic", 750, "80 Plus Gold", "Totalmente modular"),
