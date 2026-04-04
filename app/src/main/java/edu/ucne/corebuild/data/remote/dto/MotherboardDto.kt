@@ -13,7 +13,8 @@ data class MotherboardDto(
     val velocidadRamMax: String? = null,
     val precioUsd: Double? = null,
     val descripcion: String? = null,
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    val slotsM2: Int? = null
 )
 
 fun MotherboardDto.toDomain(idOverride: Int? = null): Component.Motherboard {
@@ -26,6 +27,7 @@ fun MotherboardDto.toDomain(idOverride: Int? = null): Component.Motherboard {
         format = formato ?: "",
         ramType = tipoRam ?: "",
         maxRamCapacity = velocidadRamMax,
+        slotsM2 = slotsM2 ?: 0,
         price = precioUsd ?: 0.0,
         description = descripcion ?: "",
         imageUrl = imageUrl
