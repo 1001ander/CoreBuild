@@ -54,13 +54,16 @@ fun ProductDetailScreen(
         onToggleFavorite = {
             viewModel.onEvent(ProductDetailEvent.OnToggleFavorite)
         },
+        onVariantClick = { variantId ->
+            viewModel.onEvent(ProductDetailEvent.LoadComponent(variantId))
+        },
         onDismissSnackbar = {
             viewModel.onEvent(ProductDetailEvent.DismissSnackbar)
         }
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ProductDetailContent(
     state: ProductDetailUiState,
@@ -69,6 +72,7 @@ fun ProductDetailContent(
     onAddToCart: (Component, Int) -> Unit,
     onBuyNow: (Component, Int) -> Unit,
     onToggleFavorite: () -> Unit,
+    onVariantClick: (Int) -> Unit,
     onDismissSnackbar: () -> Unit
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -290,6 +294,33 @@ fun ProductDetailContent(
                                     )
                                 }
                             }
+
+                            // Variantes de RAM (Selección de configuración: 2x8, 2x16, etc.)
+                            if (state.variants.size > 1 && component is Component.RAM) {
+                                Spacer(modifier = Modifier.height(24.dp))
+                                Text(
+                                    "Configuración de memoria",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                FlowRow(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    state.variants.forEach { variant ->
+                                        val isSelected = variant.id == component.id
+                                        val ramVariant = variant as Component.RAM
+                                        FilterChip(
+                                            selected = isSelected,
+                                            onClick = { onVariantClick(variant.id) },
+                                            label = { Text(ramVariant.configuration.ifBlank { ramVariant.capacity }) },
+                                            shape = MaterialTheme.shapes.medium
+                                        )
+                                    }
+                                }
+                            }
                             
                             if (state.currentInCart > 0) {
                                 Spacer(modifier = Modifier.height(16.dp))
@@ -417,6 +448,7 @@ fun SpecificComponentDetails(component: Component) {
                     DetailRow("Marca", component.brand)
                     DetailRow("Tipo", component.type)
                     DetailRow("Capacidad", component.capacity)
+                    DetailRow("Configuración", component.configuration)
                     DetailRow("Velocidad", component.speed)
                     DetailRow("Latencia", component.latency)
                 }
@@ -448,6 +480,7 @@ fun ProductDetailScreenPreview() {
             onAddToCart = { _, _ -> },
             onBuyNow = { _, _ -> },
             onToggleFavorite = {},
+            onVariantClick = {},
             onDismissSnackbar = {}
         )
     }
