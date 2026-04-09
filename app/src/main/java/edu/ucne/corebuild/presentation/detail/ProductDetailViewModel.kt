@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import edu.ucne.corebuild.domain.compatibility.CompatibilityEngine
-import edu.ucne.corebuild.domain.model.CartItem
 import edu.ucne.corebuild.domain.model.Component
 import edu.ucne.corebuild.domain.model.Order
 import edu.ucne.corebuild.domain.repository.CartRepository
@@ -36,6 +35,23 @@ class ProductDetailViewModel @Inject constructor(
     private val _orderCompleted = MutableStateFlow(false)
     private val _error = MutableStateFlow<String?>(null)
 
+    private val _allComponentsFlow: StateFlow<List<Component>> = getComponentsUseCase()
+        .map { result ->
+            when (result) {
+                is Resource.Success -> result.data ?: emptyList()
+                is Resource.Loading -> emptyList()
+                is Resource.Error -> {
+                    _error.value = result.message
+                    emptyList()
+                }
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private val _component = _componentId.filterNotNull().flatMapLatest { id ->
         getComponentUseCase(id).onEach { component ->
@@ -48,43 +64,37 @@ class ProductDetailViewModel @Inject constructor(
         favoriteRepository.isFavorite(id)
     }
 
-    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    private val _variants = _component.filterNotNull().flatMapLatest { component ->
-        if (component is Component.RAM) {
+    private val _variants: Flow<List<Component>> = combine(
+        _component,
+        _allComponentsFlow
+    ) { component, allComponents ->
+        if (component is Component.RAM && allComponents.isNotEmpty()) {
             val baseName = extractBaseRamName(component.name)
-            getComponentsUseCase().map { result ->
-                when (result) {
-                    is Resource.Success -> {
-                        result.data?.filterIsInstance<Component.RAM>()?.filter { 
-                            extractBaseRamName(it.name) == baseName 
-                        } ?: emptyList()
-                    }
-                    else -> emptyList()
-                }
-            }
+            val allRams = allComponents.filterIsInstance<Component.RAM>()
+            val filtered = allRams.filter { extractBaseRamName(it.name) == baseName }
+            filtered
         } else {
-            flowOf(emptyList<Component>())
+            emptyList()
         }
-    }
-
-    private val _operationState = combine(_isLoading, _snackbarMessage, _orderCompleted, _error) { loading, msg, completed, error ->
-        loading to (msg to (completed to error))
     }
 
     val uiState: StateFlow<ProductDetailUiState> = combine(
         _component,
         _isFavorite,
-        _operationState,
+        _variants,
         cartRepository.getCartItems(),
-        _variants
-    ) { component, isFav, op, cartItems, variants ->
-        val (loading, nested) = op
-        val (message, last) = nested
-        val (completed, error) = last
-        
+        combine(_isLoading, _snackbarMessage, _orderCompleted, _error) { a, b, c, d ->
+            listOf(a as Any?, b, c, d)
+        }
+    ) { component, isFav, variants, cartItems, opList ->
+        val loading = opList[0] as Boolean
+        val message = opList[1] as String?
+        val completed = opList[2] as Boolean
+        val error = opList[3] as String?
+
         val limit = component?.let { compatibilityEngine.getLimitForCategory(it) } ?: 3
         val currentInCart = cartItems.find { it.component.id == component?.id }?.quantity ?: 0
-        
+
         ProductDetailUiState(
             component = component,
             variants = variants,
@@ -101,21 +111,6 @@ class ProductDetailViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = ProductDetailUiState(isLoading = true)
     )
-
-    init {
-        viewModelScope.launch {
-            getComponentsUseCase().collect { result ->
-                when (result) {
-                    is Resource.Loading -> _isLoading.value = true
-                    is Resource.Success -> _isLoading.value = false
-                    is Resource.Error -> {
-                        _isLoading.value = false
-                        _error.value = result.message
-                    }
-                }
-            }
-        }
-    }
 
     private fun extractBaseRamName(name: String): String {
         val configPatterns = listOf(
@@ -150,16 +145,18 @@ class ProductDetailViewModel @Inject constructor(
                     val state = uiState.value
                     val limit = state.quantityLimit
                     val totalAfterAdd = state.currentInCart + event.quantity
-                    
+
                     if (totalAfterAdd > limit) {
-                         val availableToAdd = limit - state.currentInCart
-                         if (availableToAdd > 0) {
-                             cartRepository.addComponent(event.component, availableToAdd)
-                             statsRepository.recordAddedToCart(event.component.id)
-                             _snackbarMessage.value = "Límite alcanzado. Solo se agregaron $availableToAdd unidades."
-                         } else {
-                             _snackbarMessage.value = "No se puede agregar más. Límite de $limit unidades ya alcanzado."
-                         }
+                        val availableToAdd = limit - state.currentInCart
+                        if (availableToAdd > 0) {
+                            cartRepository.addComponent(event.component, availableToAdd)
+                            statsRepository.recordAddedToCart(event.component.id)
+                            _snackbarMessage.value =
+                                "Límite alcanzado. Solo se agregaron $availableToAdd unidades."
+                        } else {
+                            _snackbarMessage.value =
+                                "No se puede agregar más. Límite de $limit unidades ya alcanzado."
+                        }
                     } else {
                         cartRepository.addComponent(event.component, event.quantity)
                         statsRepository.recordAddedToCart(event.component.id)
