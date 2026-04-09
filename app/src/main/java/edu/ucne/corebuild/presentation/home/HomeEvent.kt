@@ -7,4 +7,5 @@ sealed interface HomeEvent {
     data object OnToggleBuildDialog : HomeEvent
     data object OnAddFeaturedToCart : HomeEvent
     data object ResetNavigation : HomeEvent
+    data class OnComponentClick(val id: Int) : HomeEvent
 }
