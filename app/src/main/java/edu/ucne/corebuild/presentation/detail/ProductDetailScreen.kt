@@ -24,6 +24,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import edu.ucne.corebuild.domain.model.Component
+import edu.ucne.corebuild.presentation.components.toPrice
 import edu.ucne.corebuild.ui.theme.CoreBuildTheme
 import kotlinx.coroutines.launch
 
@@ -175,7 +176,7 @@ fun ProductDetailContent(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    "$${String.format("%.2f", component.price * quantity)}",
+                                    (component.price * quantity).toPrice(),
                                     style = MaterialTheme.typography.headlineSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = if (availableToSelect > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
@@ -281,8 +282,27 @@ fun ProductDetailContent(
                                         )
                                     }
                                     Spacer(modifier = Modifier.height(12.dp))
+                                    
+                                    val displayName = if (component is Component.RAM && state.variants.size > 1) {
+                                        val configPatterns = listOf(
+                                            Regex("""\s\d+x\d+GB.*""", RegexOption.IGNORE_CASE),
+                                            Regex("""\s\d+GB.*""", RegexOption.IGNORE_CASE)
+                                        )
+                                        var base = component.name
+                                        for (pattern in configPatterns) {
+                                            val match = pattern.find(base)
+                                            if (match != null) {
+                                                base = base.substring(0, match.range.first).trim()
+                                                break
+                                            }
+                                        }
+                                        base
+                                    } else {
+                                        component.name
+                                    }
+
                                     Text(
-                                        text = component.name,
+                                        text = displayName,
                                         style = MaterialTheme.typography.headlineMedium,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -296,27 +316,54 @@ fun ProductDetailContent(
                             }
 
                             if (state.variants.size > 1 && component is Component.RAM) {
-                                Spacer(modifier = Modifier.height(24.dp))
-                                Text(
-                                    "Configuración de memoria",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Spacer(modifier = Modifier.height(12.dp))
-                                FlowRow(
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Card(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    shape = MaterialTheme.shapes.extraLarge,
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
+                                    )
                                 ) {
-                                    state.variants.forEach { variant ->
-                                        val isSelected = variant.id == component.id
-                                        val ramVariant = variant as Component.RAM
-                                        FilterChip(
-                                            selected = isSelected,
-                                            onClick = { onVariantClick(variant.id) },
-                                            label = { Text(ramVariant.configuration.ifBlank { ramVariant.capacity }) },
-                                            shape = MaterialTheme.shapes.medium
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Text(
+                                            "Selecciona tu configuración",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold
                                         )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            "${state.variants.size} opciones disponibles",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        FlowRow(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            state.variants
+                                                .sortedBy { (it as? Component.RAM)?.price ?: 0.0 }
+                                                .forEach { variant ->
+                                                    val isSelected = variant.id == component.id
+                                                    val ramVariant = variant as Component.RAM
+                                                    val label = ramVariant.configuration.ifBlank { ramVariant.capacity }
+                                                    FilterChip(
+                                                        selected = isSelected,
+                                                        onClick = { onVariantClick(variant.id) },
+                                                        label = {
+                                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                                Text(label, fontWeight = FontWeight.Bold)
+                                                                Text(
+                                                                    ramVariant.price.toPrice(),
+                                                                    style = MaterialTheme.typography.labelSmall
+                                                                )
+                                                            }
+                                                        },
+                                                        shape = MaterialTheme.shapes.medium
+                                                    )
+                                                }
+                                        }
                                     }
                                 }
                             }
