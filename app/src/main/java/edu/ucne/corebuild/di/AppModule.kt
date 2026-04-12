@@ -23,6 +23,7 @@ import edu.ucne.corebuild.domain.smartbuilder.SmartBuildGenerator
 import edu.ucne.corebuild.domain.recommendation.RecommendationEngine
 import edu.ucne.corebuild.domain.auth.AuthManager
 import edu.ucne.corebuild.domain.logs.AdminLogRepository
+import edu.ucne.corebuild.data.remote.image.ImageUploader
 import edu.ucne.corebuild.presentation.notifications.NotificationHelper
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
@@ -163,4 +164,9 @@ object AppModule {
     fun provideNetworkManager(
         @ApplicationContext context: Context
     ): NetworkManager = NetworkManager(context)
+
+    @Provides
+    @Singleton
+    fun provideImageUploader(moshi: Moshi): ImageUploader =
+        ImageUploader(moshi)
 }

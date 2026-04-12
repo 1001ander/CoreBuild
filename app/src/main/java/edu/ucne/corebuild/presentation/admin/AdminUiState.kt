@@ -12,5 +12,7 @@ data class AdminUiState(
     val errorMessage: String? = null,
     val isOnline: Boolean = true,
     val showCreateDialog: Boolean = false,
-    val showEditDialog: Boolean = false
+    val showEditDialog: Boolean = false,
+    val selectedImageUri: String? = null,
+    val isUploadingImage: Boolean = false
 )
