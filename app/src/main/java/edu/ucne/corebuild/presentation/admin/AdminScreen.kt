@@ -7,8 +7,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -21,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -238,6 +241,16 @@ fun ComponentDialog(
     onSave: (Component) -> Unit
 ) {
     var name by remember { mutableStateOf(component?.name ?: "") }
+    var brand by remember { mutableStateOf(
+        when(component) {
+            is Component.CPU -> component.brand
+            is Component.GPU -> component.brand
+            is Component.Motherboard -> component.brand
+            is Component.RAM -> component.brand
+            is Component.PSU -> component.brand
+            else -> ""
+        }
+    ) }
     var price by remember { mutableStateOf(component?.price?.toString() ?: "") }
     var category by remember { mutableStateOf(component?.category ?: "Procesador") }
     
@@ -254,7 +267,10 @@ fun ComponentDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 // Selector de Imagen
                 Box(
                     modifier = Modifier
@@ -278,6 +294,13 @@ fun ComponentDialog(
                 }
 
                 if (uiState.selectedImageUri != null && !uiState.selectedImageUri.startsWith("http")) {
+                    Text(
+                        "⚠️ Imagen local. Súbela a la nube para que sea visible en todos los dispositivos.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                     Button(
                         onClick = { onEvent(AdminEvent.OnUploadImage) },
                         modifier = Modifier.fillMaxWidth(),
@@ -294,8 +317,17 @@ fun ComponentDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Nombre") },
+                    label = { Text("Nombre del Producto") },
+                    placeholder = { Text("Ej: Intel Core Ultra 7") },
                     modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = brand,
+                    onValueChange = { brand = it },
+                    label = { Text("Marca") },
+                    placeholder = { Text("Ej: Intel, AMD, ASUS, NVIDIA") },
+                    modifier = Modifier.fillMaxWidth(),
+                    supportingText = { Text("Obligatorio para que aparezca en el inicio") }
                 )
                 OutlinedTextField(
                     value = price,
@@ -313,7 +345,7 @@ fun ComponentDialog(
                         value = category,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Tipo") },
+                        label = { Text("Categoría") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                         modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth()
                     )
@@ -339,15 +371,15 @@ fun ComponentDialog(
                 onClick = {
                     val priceVal = price.toDoubleOrNull() ?: 0.0
                     val newComponent = when (category) {
-                        "Procesador" -> Component.CPU(id = component?.id ?: 0, name = name, description = "", price = priceVal, brand = "", socket = "", generation = "", cores = 0, threads = 0, baseClock = "", boostClock = "", tdp = "")
-                        "Tarjeta Gráfica" -> Component.GPU(id = component?.id ?: 0, name = name, description = "", price = priceVal, brand = "", chipset = "", vram = "", vramType = "", consumptionWatts = "")
-                        "Placa Base" -> Component.Motherboard(id = component?.id ?: 0, name = name, description = "", price = priceVal, brand = "", socket = "", chipset = "", format = "", ramType = "")
-                        "Memoria RAM" -> Component.RAM(id = component?.id ?: 0, name = name, description = "", price = priceVal, brand = "", type = "", capacity = "", configuration = "", speed = "", latency = "")
-                        else -> Component.PSU(id = component?.id ?: 0, name = name, description = "", price = priceVal, brand = "", wattage = 0, certification = "", modularity = "")
+                        "Procesador" -> Component.CPU(id = component?.id ?: 0, name = name, description = "Procesador de alto rendimiento", price = priceVal, brand = brand, socket = "LGA1700", generation = "Gen 14", cores = 12, threads = 20, baseClock = "3.5GHz", boostClock = "5.0GHz", tdp = "125W")
+                        "Tarjeta Gráfica" -> Component.GPU(id = component?.id ?: 0, name = name, description = "Potencia gráfica extrema", price = priceVal, brand = brand, chipset = name, vram = "12GB", vramType = "GDDR6X", consumptionWatts = "250W")
+                        "Placa Base" -> Component.Motherboard(id = component?.id ?: 0, name = name, description = "Placa base estable", price = priceVal, brand = brand, socket = "AM5", chipset = "B650", format = "ATX", ramType = "DDR5")
+                        "Memoria RAM" -> Component.RAM(id = component?.id ?: 0, name = name, description = "Memoria ultra rápida", price = priceVal, brand = brand, type = "DDR5", capacity = "32GB", configuration = "2x16GB", speed = "6000MHz", latency = "CL30")
+                        else -> Component.PSU(id = component?.id ?: 0, name = name, description = "Fuente certificada", price = priceVal, brand = brand, wattage = 850, certification = "80+ Gold", modularity = "Full Modular")
                     }
                     onSave(newComponent)
                 },
-                enabled = !uiState.isSaving && name.isNotBlank() && price.toDoubleOrNull() != null
+                enabled = !uiState.isSaving && name.isNotBlank() && brand.isNotBlank() && price.toDoubleOrNull() != null
             ) {
                 if (uiState.isSaving) {
                     CircularProgressIndicator(
@@ -356,7 +388,7 @@ fun ComponentDialog(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Guardar")
+                    Text("Guardar Componente")
                 }
             }
         },

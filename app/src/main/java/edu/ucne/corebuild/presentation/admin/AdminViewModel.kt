@@ -117,7 +117,7 @@ class AdminViewModel @Inject constructor(
 
     private fun uploadImage() {
         val uriStr = _uiState.value.selectedImageUri ?: return
-        if (uriStr.startsWith("http")) return // Ya es una URL de red
+        if (uriStr.startsWith("http")) return
 
         viewModelScope.launch {
             _uiState.update { it.copy(isUploadingImage = true) }
@@ -128,7 +128,7 @@ class AdminViewModel @Inject constructor(
                             it.copy(
                                 isUploadingImage = false,
                                 selectedImageUri = url,
-                                successMessage = "Imagen subida correctamente"
+                                successMessage = "Imagen lista para guardar"
                             )
                         }
                     },
@@ -146,9 +146,7 @@ class AdminViewModel @Inject constructor(
 
     private fun createComponent(component: Component) {
         if (!networkManager.isOnline()) {
-            _uiState.update {
-                it.copy(errorMessage = "Se requiere conexión para crear componentes")
-            }
+            _uiState.update { it.copy(errorMessage = "Sin conexión") }
             return
         }
         viewModelScope.launch {
@@ -168,31 +166,21 @@ class AdminViewModel @Inject constructor(
                         _uiState.update {
                             it.copy(
                                 isSaving = false,
-                                successMessage = "Componente creado correctamente",
+                                successMessage = "Componente guardado",
                                 showCreateDialog = false,
                                 selectedImageUri = null
                             )
                         }
+                        loadComponents() // Recarga forzada
                     },
                     onFailure = { e ->
-                        _uiState.update {
-                            it.copy(
-                                isSaving = false,
-                                errorMessage = e.message ?: "Error al crear"
-                            )
-                        }
+                        _uiState.update { it.copy(isSaving = false, errorMessage = e.message) }
                     }
                 )
         }
     }
 
     private fun updateComponent(component: Component) {
-        if (!networkManager.isOnline()) {
-            _uiState.update {
-                it.copy(errorMessage = "Se requiere conexión para editar componentes")
-            }
-            return
-        }
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
             val componentWithImage = component.withImageUrl(_uiState.value.selectedImageUri)
@@ -200,63 +188,30 @@ class AdminViewModel @Inject constructor(
                 .fold(
                     onSuccess = {
                         adminLogRepository.addLog(
-                            AdminLog(
-                                userEmail = currentUserEmail,
-                                action = "UPDATE",
-                                componentName = component.name,
-                                componentType = component.category
-                            )
+                            AdminLog(userEmail = currentUserEmail, action = "UPDATE", componentName = component.name, componentType = component.category)
                         )
                         _uiState.update {
-                            it.copy(
-                                isSaving = false,
-                                successMessage = "Componente actualizado",
-                                showEditDialog = false,
-                                selectedComponent = null,
-                                selectedImageUri = null
-                            )
+                            it.copy(isSaving = false, successMessage = "Actualizado", showEditDialog = false)
                         }
+                        loadComponents()
                     },
                     onFailure = { e ->
-                        _uiState.update {
-                            it.copy(
-                                isSaving = false,
-                                errorMessage = e.message ?: "Error al actualizar"
-                            )
-                        }
+                        _uiState.update { it.copy(isSaving = false, errorMessage = e.message) }
                     }
                 )
         }
     }
 
     private fun deleteComponent(id: Int, type: String) {
-        if (!networkManager.isOnline()) {
-            _uiState.update {
-                it.copy(errorMessage = "Se requiere conexión para eliminar componentes")
-            }
-            return
-        }
         viewModelScope.launch {
-            val componentName = _uiState.value.components.find { it.id == id }?.name ?: "ID: $id"
             componentRepository.deleteComponent(id, type)
                 .fold(
                     onSuccess = {
-                        adminLogRepository.addLog(
-                            AdminLog(
-                                userEmail = currentUserEmail,
-                                action = "DELETE",
-                                componentName = componentName,
-                                componentType = type
-                            )
-                        )
-                        _uiState.update {
-                            it.copy(successMessage = "Componente eliminado")
-                        }
+                        _uiState.update { it.copy(successMessage = "Eliminado") }
+                        loadComponents()
                     },
                     onFailure = { e ->
-                        _uiState.update {
-                            it.copy(errorMessage = e.message ?: "Error al eliminar")
-                        }
+                        _uiState.update { it.copy(errorMessage = e.message) }
                     }
                 )
         }
