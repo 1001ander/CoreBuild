@@ -9,6 +9,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import edu.ucne.corebuild.core.network.NetworkManager
 import edu.ucne.corebuild.data.local.dao.*
 import edu.ucne.corebuild.data.local.database.CoreBuildDatabase
 import edu.ucne.corebuild.data.remote.api.CoreBuildApi
@@ -148,4 +149,10 @@ object AppModule {
     @Provides
     @Singleton
     fun provideAuthManager(): AuthManager = AuthManager()
+
+    @Provides
+    @Singleton
+    fun provideNetworkManager(
+        @ApplicationContext context: Context
+    ): NetworkManager = NetworkManager(context)
 }
