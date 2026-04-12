@@ -67,6 +67,8 @@ class AdminViewModel @Inject constructor(
                         showEditDialog = true
                     )
                 }
+            AdminEvent.OnShowCreateDialog -> 
+                _uiState.update { it.copy(showCreateDialog = true) }
             AdminEvent.OnDismissDialog ->
                 _uiState.update {
                     it.copy(

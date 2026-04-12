@@ -20,6 +20,7 @@ sealed interface AdminEvent {
     data class OnSelectComponent(
         val component: Component
     ) : AdminEvent
+    data object OnShowCreateDialog : AdminEvent
     data object OnDismissDialog : AdminEvent
     data object DismissMessage : AdminEvent
 }
