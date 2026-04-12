@@ -5,8 +5,11 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import edu.ucne.corebuild.core.network.NetworkManager
 import edu.ucne.corebuild.domain.auth.AuthManager
+import edu.ucne.corebuild.domain.logs.AdminLog
+import edu.ucne.corebuild.domain.logs.AdminLogRepository
 import edu.ucne.corebuild.domain.model.Component
 import edu.ucne.corebuild.domain.repository.ComponentRepository
+import edu.ucne.corebuild.domain.repository.UserRepository
 import edu.ucne.corebuild.util.Resource
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -16,15 +19,28 @@ import javax.inject.Inject
 class AdminViewModel @Inject constructor(
     private val componentRepository: ComponentRepository,
     private val networkManager: NetworkManager,
-    private val authManager: AuthManager
+    private val authManager: AuthManager,
+    private val userRepository: UserRepository,
+    private val adminLogRepository: AdminLogRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AdminUiState())
     val uiState: StateFlow<AdminUiState> = _uiState.asStateFlow()
 
+    private var currentUserEmail: String = ""
+
     init {
         loadComponents()
         checkConnectivity()
+        observeCurrentUser()
+    }
+
+    private fun observeCurrentUser() {
+        viewModelScope.launch {
+            userRepository.getLoggedUser().collect { user ->
+                currentUserEmail = user?.email ?: "admin@corebuild.com"
+            }
+        }
     }
 
     private fun loadComponents() {
@@ -100,6 +116,14 @@ class AdminViewModel @Inject constructor(
             componentRepository.addComponent(component)
                 .fold(
                     onSuccess = {
+                        adminLogRepository.addLog(
+                            AdminLog(
+                                userEmail = currentUserEmail,
+                                action = "CREATE",
+                                componentName = component.name,
+                                componentType = component.category
+                            )
+                        )
                         _uiState.update {
                             it.copy(
                                 isSaving = false,
@@ -132,6 +156,14 @@ class AdminViewModel @Inject constructor(
             componentRepository.updateComponent(component)
                 .fold(
                     onSuccess = {
+                        adminLogRepository.addLog(
+                            AdminLog(
+                                userEmail = currentUserEmail,
+                                action = "UPDATE",
+                                componentName = component.name,
+                                componentType = component.category
+                            )
+                        )
                         _uiState.update {
                             it.copy(
                                 isSaving = false,
@@ -161,9 +193,18 @@ class AdminViewModel @Inject constructor(
             return
         }
         viewModelScope.launch {
+            val componentName = _uiState.value.components.find { it.id == id }?.name ?: "ID: $id"
             componentRepository.deleteComponent(id, type)
                 .fold(
                     onSuccess = {
+                        adminLogRepository.addLog(
+                            AdminLog(
+                                userEmail = currentUserEmail,
+                                action = "DELETE",
+                                componentName = componentName,
+                                componentType = type
+                            )
+                        )
                         _uiState.update {
                             it.copy(successMessage = "Componente eliminado")
                         }
