@@ -8,6 +8,7 @@ import android.os.Build
 import android.provider.MediaStore
 import com.squareup.moshi.Moshi
 import edu.ucne.corebuild.data.remote.dto.CloudinaryResponseDto
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -24,10 +25,12 @@ import javax.inject.Singleton
 class ImageUploader @Inject constructor(
     private val moshi: Moshi
 ) {
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+
     suspend fun uploadImage(
         context: Context,
         uri: Uri
-    ): Result<String> = withContext(Dispatchers.IO) {
+    ): Result<String> = withContext(ioDispatcher) {
         runCatching {
             val compressed = compressImage(context, uri)
             val client = OkHttpClient()
@@ -48,11 +51,12 @@ class ImageUploader @Inject constructor(
 
             val response = client.newCall(request).execute()
             val json = response.body?.string() ?: error("Respuesta vacía")
+            android.util.Log.d("CLOUDINARY", "Response code: ${response.code}")
+            android.util.Log.d("CLOUDINARY", "Response body: $json")
             val adapter = moshi.adapter(CloudinaryResponseDto::class.java)
             val dto = adapter.fromJson(json)
-            val rawUrl = dto?.secure_url ?: error("URL no encontrada")
+            val rawUrl = dto?.secureUrl ?: error("URL no encontrada")
             
-            // Agregar transformaciones automáticas
             rawUrl.replace("/upload/", "/upload/q_auto,f_auto,w_800/")
         }
     }

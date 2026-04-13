@@ -115,10 +115,10 @@ class BottleneckViewModel @Inject constructor(
         val watts = Regex("""\d+""").find(gpu.consumptionWatts)
             ?.value?.toDoubleOrNull() ?: 200.0
         val gpuScore = watts / 4.0
-        val CPU_MAX = 120.0
-        val GPU_MAX = 200.0
-        val normalizedCpu = (cpuScore / CPU_MAX).coerceIn(0.0, 1.0)
-        val normalizedGpu = (gpuScore / GPU_MAX).coerceIn(0.0, 1.0)
+        val maxCpu = 120.0
+        val maxGpu = 200.0
+        val normalizedCpu = (cpuScore / maxCpu).coerceIn(0.0, 1.0)
+        val normalizedGpu = (gpuScore / maxGpu).coerceIn(0.0, 1.0)
         val idealRatio = when (res) {
             "1080p" -> 1.10
             "1440p" -> 1.00

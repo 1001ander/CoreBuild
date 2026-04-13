@@ -13,8 +13,8 @@ class SmartBuildGenerator @Inject constructor(
         anchorGpu: Component.GPU?,
         allComponents: List<Component>
     ): SmartBuild {
-        if (anchorCpu == null && anchorGpu == null) {
-            throw IllegalArgumentException("At least one anchor component must be selected")
+        require(!(anchorCpu == null && anchorGpu == null)) {
+            "At least one anchor component must be selected"
         }
 
         val cpus = allComponents.filterIsInstance<Component.CPU>()

@@ -106,31 +106,7 @@ fun CartBody(
             if (state.showOrderConfirmation) {
                 OrderConfirmationOverlay()
             } else if (state.cartItems.isEmpty()) {
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        Icons.Default.ShoppingCart,
-                        contentDescription = null,
-                        modifier = Modifier.size(80.dp),
-                        tint = MaterialTheme.colorScheme.outline
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        "Tu carrito está vacío",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                    Text(
-                        "Agrega componentes desde el catálogo",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline,
-                        textAlign = TextAlign.Center
-                    )
-                }
+                EmptyCartView()
             } else {
                 Column(modifier = Modifier.fillMaxSize()) {
                     LazyColumn(
@@ -157,7 +133,7 @@ fun CartBody(
                     }
 
                     CartSummary(
-                        state = state,
+                        totalPrice = state.total,
                         onClearCart = { onEvent(CartEvent.ClearCart) },
                         onCheckout = { onEvent(CartEvent.OnCheckout) }
                     )
@@ -168,7 +144,37 @@ fun CartBody(
 }
 
 @Composable
-fun BuildScoreSection(
+private fun EmptyCartView() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            Icons.Default.ShoppingCart,
+            contentDescription = null,
+            modifier = Modifier.size(80.dp),
+            tint = MaterialTheme.colorScheme.outline
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            "Tu carrito está vacío",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.outline
+        )
+        Text(
+            "Agrega componentes desde el catálogo",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.outline,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
+private fun BuildScoreSection(
     state: CartUiState,
     overviewState: BuildOverviewUiState
 ) {
@@ -393,7 +399,7 @@ fun WarningSection(warnings: List<String>) {
 }
 
 @Composable
-fun CartItemRow(
+private fun CartItemRow(
     item: CartItem,
     onUpdateQuantity: (Int, Int) -> Unit,
     onRemove: (Int) -> Unit
@@ -485,8 +491,8 @@ fun CartItemRow(
 }
 
 @Composable
-fun CartSummary(
-    state: CartUiState,
+private fun CartSummary(
+    totalPrice: Double,
     onClearCart: () -> Unit,
     onCheckout: () -> Unit
 ) {
@@ -507,7 +513,7 @@ fun CartSummary(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = state.total.toPrice(),
+                    text = totalPrice.toPrice(),
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
