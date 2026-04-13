@@ -38,6 +38,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import dagger.hilt.android.AndroidEntryPoint
 import edu.ucne.corebuild.presentation.admin.AdminScreen
+import edu.ucne.corebuild.presentation.admin.ComponentFormScreen
 import edu.ucne.corebuild.presentation.admin.logs.LogsScreen
 import edu.ucne.corebuild.presentation.auth.AuthViewModel
 import edu.ucne.corebuild.presentation.auth.LoginScreen
@@ -433,11 +434,15 @@ fun CoreBuildAppContent(
             composable<Screen.AdminPanel> {
                 AdminScreen(
                     onLogsClick = { navController.navigate(Screen.AdminLogs) },
+                    onAddNewClick = { navController.navigate(Screen.ComponentForm) },
                     onBack = { navController.navigateUp() }
                 )
             }
             composable<Screen.AdminLogs> {
                 LogsScreen(onBack = { navController.navigateUp() })
+            }
+            composable<Screen.ComponentForm> {
+                ComponentFormScreen(onBack = { navController.navigateUp() })
             }
         }
     }
