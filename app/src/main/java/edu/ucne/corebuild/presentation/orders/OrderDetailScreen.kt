@@ -20,6 +20,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import edu.ucne.corebuild.domain.model.Component
+import edu.ucne.corebuild.domain.model.OrderMode
 import edu.ucne.corebuild.presentation.components.toPrice
 import edu.ucne.corebuild.ui.theme.CoreBuildTheme
 import java.text.SimpleDateFormat
@@ -68,107 +69,116 @@ fun OrderDetailBody(
         ) {
             if (state.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            } else if (state.order != null) {
-                val order = state.order!!
-                val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-                
-                // Agrupamos componentes iguales para mostrar cantidad
-                val groupedComponents = order.components.groupBy { it.id }
+            } else {
+                state.order?.let { order ->
+                    val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+                    val groupedComponents = order.components.groupBy { it.id }
 
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.2f)
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        item {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.2f)
+                                )
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "Pedido #${order.id}",
+                                            style = MaterialTheme.typography.titleLarge,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        
+                                        val statusLabel = when (order.status) {
+                                            OrderMode.CREATED -> "Creado"
+                                            OrderMode.ENVIADO -> "Enviado"
+                                            OrderMode.ENTREGADO -> "Entregado"
+                                            else -> order.status.name
+                                        }
+
+                                        Badge(
+                                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                                        ) {
+                                            Text(
+                                                text = statusLabel,
+                                                modifier = Modifier.padding(4.dp),
+                                                style = MaterialTheme.typography.labelSmall
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "Realizado el: ${dateFormat.format(order.date)}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+
+                        item {
+                            Text(
+                                text = "Detalle de Productos",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
                             )
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
+                        }
+
+                        items(groupedComponents.values.toList()) { componentsList ->
+                            val component = componentsList.first()
+                            val quantity = componentsList.size
+                            OrderItemRow(component, quantity)
+                        }
+
+                        item {
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(4.dp)
+                                )
+                            ) {
                                 Row(
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "Pedido #${order.id}",
-                                        style = MaterialTheme.typography.titleLarge,
+                                        text = "Total Final",
+                                        style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold
                                     )
-                                    Badge(
-                                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                                    ) {
-                                        Text(
-                                            text = order.status.name,
-                                            modifier = Modifier.padding(4.dp),
-                                            style = MaterialTheme.typography.labelSmall
-                                        )
-                                    }
+                                    Text(
+                                        text = order.totalPrice.toPrice(),
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.ExtraBold
+                                    )
                                 }
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = "Realizado el: ${dateFormat.format(order.date)}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-
-                    item {
-                        Text(
-                            text = "Detalle de Productos",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    items(groupedComponents.values.toList()) { componentsList ->
-                        val component = componentsList.first()
-                        val quantity = componentsList.size
-                        OrderItemRow(component, quantity)
-                    }
-
-                    item {
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(4.dp)
-                            )
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .padding(16.dp)
-                                    .fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Total Final",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = order.totalPrice.toPrice(),
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.ExtraBold
-                                )
                             }
                         }
                     }
                 }
-            } else if (state.error != null) {
-                Column(
-                    modifier = Modifier.align(Alignment.Center),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(text = "Error al cargar el pedido", color = MaterialTheme.colorScheme.error)
-                    Text(text = state.error!!, style = MaterialTheme.typography.bodySmall)
+                
+                state.error?.let { error ->
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(text = "Error al cargar el pedido", color = MaterialTheme.colorScheme.error)
+                        Text(text = error, style = MaterialTheme.typography.bodySmall)
+                    }
                 }
             }
         }

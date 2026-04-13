@@ -2,6 +2,7 @@ package edu.ucne.corebuild.data.repository
 
 import android.util.Log
 import edu.ucne.corebuild.data.local.dao.ComponentDao
+import edu.ucne.corebuild.data.local.entity.ComponentEntity
 import edu.ucne.corebuild.data.local.mapper.toDomain
 import edu.ucne.corebuild.data.local.mapper.toEntity
 import edu.ucne.corebuild.data.remote.datasource.RemoteDataSource
@@ -72,15 +73,19 @@ class ComponentRepositoryImpl @Inject constructor(
     ) {
         fetcher()
             .onSuccess { list ->
-                val entities = list.map { dto ->
+                val entities = mutableListOf<ComponentEntity>()
+                for (dto in list) {
                     val domain = mapper(dto)
-                    // SOLO aplicamos imagen por defecto si el componente NO tiene una imagen ya asignada (ej. de Cloudinary)
-                    val finalImageUrl = if (domain.imageUrl.isNullOrBlank()) {
-                        imageDeterminer(domain)
-                    } else {
-                        domain.imageUrl
+                    val existingEntity = dao.getByIdSync(domain.id)
+                    val finalImageUrl = when {
+                        !existingEntity?.imageUrl.isNullOrBlank() ->
+                            existingEntity?.imageUrl
+                        !domain.imageUrl.isNullOrBlank() ->
+                            domain.imageUrl
+                        else ->
+                            imageDeterminer(domain)
                     }
-                    domain.withImageUrl(finalImageUrl).toEntity()
+                    entities.add(domain.withImageUrl(finalImageUrl).toEntity())
                 }
                 dao.insertAll(entities)
             }
@@ -107,15 +112,24 @@ class ComponentRepositoryImpl @Inject constructor(
         handleComponentResponse(result, component.imageUrl)
     }
 
-    override suspend fun updateComponent(component: Component): Result<Unit> = runCatching {
+    override suspend fun updateComponent(
+        component: Component
+    ): Result<Unit> = runCatching {
         val result = when (component) {
-            is Component.CPU -> remoteDataSource.updateCpu(component.id, component.toDto())
-            is Component.GPU -> remoteDataSource.updateGpu(component.id - 1000, component.toDto())
-            is Component.Motherboard -> remoteDataSource.updateMotherboard(component.id - 2000, component.toDto())
-            is Component.RAM -> remoteDataSource.updateRam(component.id - 3000, component.toDto())
-            is Component.PSU -> remoteDataSource.updatePsu(component.id - 4000, component.toDto())
+            is Component.CPU ->
+                remoteDataSource.updateCpu(component.id, component.toDto())
+            is Component.GPU ->
+                remoteDataSource.updateGpu(component.id - 1000, component.toDto())
+            is Component.Motherboard ->
+                remoteDataSource.updateMotherboard(component.id - 2000, component.toDto())
+            is Component.RAM ->
+                remoteDataSource.updateRam(component.id - 3000, component.toDto())
+            is Component.PSU ->
+                remoteDataSource.updatePsu(component.id - 4000, component.toDto())
         }
-        handleComponentResponse(result, component.imageUrl)
+        result.onSuccess {
+            dao.insertAll(listOf(component.toEntity()))
+        }.onFailure { throw it }
     }
 
     private suspend fun handleComponentResponse(response: Result<Any>, preferredImageUrl: String?) {
@@ -126,9 +140,8 @@ class ComponentRepositoryImpl @Inject constructor(
                 is MotherboardDto -> dto.toDomain(dto.id + 2000)
                 is RamDto -> dto.toDomain(dto.id + 3000)
                 is PsuDto -> dto.toDomain(dto.id + 4000)
-                else -> throw IllegalStateException("Tipo de DTO desconocido")
+                else -> error("Tipo de DTO desconocido")
             }
-            // Mantenemos la imagen que el usuario subió si existe
             val finalDomain = if (!preferredImageUrl.isNullOrBlank()) {
                 domain.withImageUrl(preferredImageUrl)
             } else domain
