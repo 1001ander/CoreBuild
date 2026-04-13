@@ -9,6 +9,9 @@
 ![Hilt](https://img.shields.io/badge/DI-Hilt-orange?style=for-the-badge)
 
 ---
+## 👨🏻‍💻👨🏻‍💻 Participantes 
+Andy Vladimir Javier Familia 2021-0767
+Anderson Núñez Consoró 2019-0030
 
 ## 🚀 Funcionalidades Destacadas
 
