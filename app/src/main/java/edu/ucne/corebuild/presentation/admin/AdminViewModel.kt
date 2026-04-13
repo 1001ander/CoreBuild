@@ -78,7 +78,14 @@ class AdminViewModel @Inject constructor(
             AdminEvent.OnLoadComponents -> loadComponents()
             is AdminEvent.OnSelectType ->
                 _uiState.update { it.copy(selectedType = event.type) }
-            is AdminEvent.OnCreateComponent -> createComponent(event.component)
+            is AdminEvent.OnCreateComponent -> {
+                val component = buildComponentFromForm()
+                if (component == null) {
+                    _uiState.update { it.copy(errorMessage = "Completa los campos requeridos") }
+                } else {
+                    createComponent(component)
+                }
+            }
             is AdminEvent.OnUpdateComponent -> updateComponent(event.component)
             is AdminEvent.OnDeleteComponent ->
                 deleteComponent(event.id, event.type)
@@ -98,7 +105,8 @@ class AdminViewModel @Inject constructor(
                         showCreateDialog = false,
                         showEditDialog = false,
                         selectedComponent = null,
-                        selectedImageUri = null
+                        selectedImageUri = null,
+                        navigateBack = false
                     )
                 }
             AdminEvent.DismissMessage ->
@@ -108,10 +116,151 @@ class AdminViewModel @Inject constructor(
                         errorMessage = null
                     )
                 }
-            is AdminEvent.OnImageSelected ->
-                _uiState.update { it.copy(selectedImageUri = event.uri) }
+            is AdminEvent.OnImageSelected -> {
+                _uiState.update { 
+                    it.copy(
+                        selectedImageUri = event.uri,
+                        formState = it.formState.copy(imageUrl = event.uri)
+                    ) 
+                }
+            }
             AdminEvent.OnUploadImage -> uploadImage()
-            else -> {}
+            is AdminEvent.OnFormFieldChange -> {
+                val current = _uiState.value.formState
+                val updated = when (event.field) {
+                    "tipo" -> current.copy(tipo = event.value)
+                    "nombre" -> current.copy(nombre = event.value)
+                    "marca" -> current.copy(marca = event.value)
+                    "precioUsd" -> current.copy(precioUsd = event.value)
+                    "descripcion" -> current.copy(descripcion = event.value)
+                    "imageUrl" -> current.copy(imageUrl = event.value)
+                    "socket" -> current.copy(socket = event.value)
+                    "generacion" -> current.copy(generacion = event.value)
+                    "nucleos" -> current.copy(nucleos = event.value)
+                    "hilos" -> current.copy(hilos = event.value)
+                    "frecuenciaBase" -> current.copy(frecuenciaBase = event.value)
+                    "frecuenciaTurbo" -> current.copy(frecuenciaTurbo = event.value)
+                    "cacheL3" -> current.copy(cacheL3 = event.value)
+                    "tdpWatts" -> current.copy(tdpWatts = event.value)
+                    "graficosIntegrados" -> current.copy(graficosIntegrados = event.value)
+                    "soporteRam" -> current.copy(soporteRam = event.value)
+                    "chipset" -> current.copy(chipset = event.value)
+                    "vram" -> current.copy(vram = event.value)
+                    "tipoVram" -> current.copy(tipoVram = event.value)
+                    "busMemoria" -> current.copy(busMemoria = event.value)
+                    "frecuenciaBoost" -> current.copy(frecuenciaBoost = event.value)
+                    "consumoWatts" -> current.copy(consumoWatts = event.value)
+                    "fuenteRecomendada" -> current.copy(fuenteRecomendada = event.value)
+                    "conectoresEnergia" -> current.copy(conectoresEnergia = event.value)
+                    "versionPcie" -> current.copy(versionPcie = event.value)
+                    "chipsetMobo" -> current.copy(chipsetMobo = event.value)
+                    "formato" -> current.copy(formato = event.value)
+                    "compatibilidadCpu" -> current.copy(compatibilidadCpu = event.value)
+                    "tipoRam" -> current.copy(tipoRam = event.value)
+                    "velocidadRamMax" -> current.copy(velocidadRamMax = event.value)
+                    "slotsRam" -> current.copy(slotsRam = event.value)
+                    "almacenamiento" -> current.copy(almacenamiento = event.value)
+                    "puertos" -> current.copy(puertos = event.value)
+                    "conectividad" -> current.copy(conectividad = event.value)
+                    "tipoRam2" -> current.copy(tipoRam2 = event.value)
+                    "capacidadTotal" -> current.copy(capacidadTotal = event.value)
+                    "configuracion" -> current.copy(configuracion = event.value)
+                    "velocidad" -> current.copy(velocidad = event.value)
+                    "latencia" -> current.copy(latencia = event.value)
+                    "voltaje" -> current.copy(voltaje = event.value)
+                    "perfil" -> current.copy(perfil = event.value)
+                    "potenciaWatts" -> current.copy(potenciaWatts = event.value)
+                    "certificacion" -> current.copy(certificacion = event.value)
+                    "tipoModular" -> current.copy(tipoModular = event.value)
+                    "eficiencia" -> current.copy(eficiencia = event.value)
+                    "ventilador" -> current.copy(ventilador = event.value)
+                    "protecciones" -> current.copy(protecciones = event.value)
+                    "conectores" -> current.copy(conectores = event.value)
+                    else -> current
+                }
+                _uiState.update { it.copy(formState = updated) }
+            }
+            is AdminEvent.OnFieldChange -> {
+                // Reusing OnFormFieldChange logic for backward compatibility if needed
+                onEvent(AdminEvent.OnFormFieldChange(event.field, event.value))
+            }
+            AdminEvent.OnResetForm ->
+                _uiState.update {
+                    it.copy(formState = ComponentFormState(), navigateBack = false)
+                }
+        }
+    }
+
+    private fun buildComponentFromForm(): Component? {
+        val f = _uiState.value.formState
+        val precio = f.precioUsd.toDoubleOrNull()
+            ?: return null
+        if (f.nombre.isBlank() || f.marca.isBlank())
+            return null
+        return when (f.tipo) {
+            "CPU" -> Component.CPU(
+                id = 0, name = f.nombre, brand = f.marca,
+                socket = f.socket, generation = f.generacion,
+                cores = f.nucleos.toIntOrNull() ?: 0,
+                threads = f.hilos.toIntOrNull() ?: 0,
+                baseClock = f.frecuenciaBase,
+                boostClock = f.frecuenciaTurbo,
+                cache = f.cacheL3.ifBlank { null },
+                tdp = "${f.tdpWatts}W",
+                integratedGraphics = f.graficosIntegrados.ifBlank { null },
+                ramSupport = f.soporteRam.ifBlank { null },
+                price = precio, description = f.descripcion,
+                imageUrl = f.imageUrl.ifBlank { null },
+                category = "Procesador"
+            )
+            "GPU" -> Component.GPU(
+                id = 0, name = f.nombre, brand = f.marca,
+                chipset = f.chipset, vram = f.vram,
+                vramType = f.tipoVram,
+                memoryBus = f.busMemoria.ifBlank { null },
+                baseClock = f.frecuenciaBase.ifBlank { null },
+                boostClock = f.frecuenciaTurbo.ifBlank { null }, // Adjusted to match FormState field if necessary
+                consumptionWatts = "${f.consumoWatts}W",
+                recommendedPSU = f.fuenteRecomendada.ifBlank { null },
+                pcieInterface = f.versionPcie.ifBlank { null },
+                price = precio, description = f.descripcion,
+                imageUrl = f.imageUrl.ifBlank { null },
+                category = "Tarjeta Gráfica"
+            )
+            "Motherboard" -> Component.Motherboard(
+                id = 0, name = f.nombre, brand = f.marca,
+                socket = f.socket, chipset = f.chipsetMobo,
+                format = f.formato, ramType = f.tipoRam,
+                maxRamSpeed = f.velocidadRamMax.ifBlank { null },
+                ramSlots = f.slotsRam.toIntOrNull(),
+                maxRamCapacity = null, slotsM2 = 0,
+                price = precio, description = f.descripcion,
+                imageUrl = f.imageUrl.ifBlank { null },
+                category = "Placa Base"
+            )
+            "RAM" -> Component.RAM(
+                id = 0, name = f.nombre, brand = f.marca,
+                type = f.tipoRam2, capacity = f.capacidadTotal,
+                speed = f.velocidad, latency = f.latencia,
+                voltage = f.voltaje.ifBlank { null },
+                hasRGB = f.nombre.contains("RGB", ignoreCase = true),
+                price = precio, description = f.descripcion,
+                imageUrl = f.imageUrl.ifBlank { null },
+                category = "Memoria RAM",
+                configuration = f.configuracion
+            )
+            "PSU" -> Component.PSU(
+                id = 0, name = f.nombre, brand = f.marca,
+                wattage = f.potenciaWatts.toIntOrNull() ?: 0,
+                certification = f.certificacion,
+                modularity = f.tipoModular,
+                fanSize = f.ventilador.ifBlank { null },
+                protection = f.protecciones.ifBlank { null },
+                price = precio, description = f.descripcion,
+                imageUrl = f.imageUrl.ifBlank { null },
+                category = "Fuente de Poder"
+            )
+            else -> null
         }
     }
 
@@ -128,6 +277,7 @@ class AdminViewModel @Inject constructor(
                             it.copy(
                                 isUploadingImage = false,
                                 selectedImageUri = url,
+                                formState = it.formState.copy(imageUrl = url),
                                 successMessage = "Imagen lista para guardar"
                             )
                         }
@@ -151,8 +301,7 @@ class AdminViewModel @Inject constructor(
         }
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
-            val componentWithImage = component.withImageUrl(_uiState.value.selectedImageUri)
-            componentRepository.addComponent(componentWithImage)
+            componentRepository.addComponent(component)
                 .fold(
                     onSuccess = {
                         adminLogRepository.addLog(
@@ -168,10 +317,12 @@ class AdminViewModel @Inject constructor(
                                 isSaving = false,
                                 successMessage = "Componente guardado",
                                 showCreateDialog = false,
-                                selectedImageUri = null
+                                selectedImageUri = null,
+                                navigateBack = true,
+                                formState = ComponentFormState()
                             )
                         }
-                        loadComponents() // Recarga forzada
+                        loadComponents()
                     },
                     onFailure = { e ->
                         _uiState.update { it.copy(isSaving = false, errorMessage = e.message) }
@@ -191,7 +342,13 @@ class AdminViewModel @Inject constructor(
                             AdminLog(userEmail = currentUserEmail, action = "UPDATE", componentName = component.name, componentType = component.category)
                         )
                         _uiState.update {
-                            it.copy(isSaving = false, successMessage = "Actualizado", showEditDialog = false)
+                            it.copy(
+                                isSaving = false, 
+                                successMessage = "Actualizado", 
+                                showEditDialog = false,
+                                navigateBack = true,
+                                formState = ComponentFormState()
+                            )
                         }
                         loadComponents()
                     },
