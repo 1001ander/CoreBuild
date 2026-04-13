@@ -59,4 +59,7 @@ sealed class Screen {
 
     @Serializable
     data object AdminLogs : Screen()
+
+    @Serializable
+    data object ComponentForm : Screen()
 }
