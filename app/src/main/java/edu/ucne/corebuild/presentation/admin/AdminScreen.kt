@@ -1,16 +1,8 @@
 package edu.ucne.corebuild.presentation.admin
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -18,16 +10,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.AsyncImage
 import edu.ucne.corebuild.domain.model.Component
 import edu.ucne.corebuild.presentation.components.toPrice
 
@@ -35,6 +22,7 @@ import edu.ucne.corebuild.presentation.components.toPrice
 fun AdminScreen(
     viewModel: AdminViewModel = hiltViewModel(),
     onLogsClick: () -> Unit,
+    onAddNewClick: () -> Unit,
     onBack: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -42,6 +30,7 @@ fun AdminScreen(
         state = state,
         onEvent = viewModel::onEvent,
         onLogsClick = onLogsClick,
+        onAddNewClick = onAddNewClick,
         onBack = onBack
     )
 }
@@ -52,6 +41,7 @@ fun AdminBody(
     state: AdminUiState,
     onEvent: (AdminEvent) -> Unit,
     onLogsClick: () -> Unit,
+    onAddNewClick: () -> Unit,
     onBack: () -> Unit
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -85,7 +75,10 @@ fun AdminBody(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { if (state.isOnline) onEvent(AdminEvent.OnShowCreateDialog) },
+                onClick = { 
+                    onEvent(AdminEvent.OnResetForm)
+                    onAddNewClick() 
+                },
                 containerColor = if (state.isOnline) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                 contentColor = if (state.isOnline) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
             ) {
@@ -128,34 +121,16 @@ fun AdminBody(
                     items(components, key = { it.id }) { component ->
                         ComponentAdminCard(
                             component = component,
-                            onEdit = { onEvent(AdminEvent.OnSelectComponent(component)) },
+                            onEdit = { 
+                                // Para editar, idealmente usaríamos el mismo formulario pero 
+                                // por ahora mantenemos la consistencia del flujo de navegación.
+                                // onEvent(AdminEvent.OnSelectComponent(component)) 
+                            },
                             onDelete = { onEvent(AdminEvent.OnDeleteComponent(component.id, component.category)) }
                         )
                     }
                 }
             }
-        }
-
-        if (state.showEditDialog && state.selectedComponent != null) {
-            ComponentDialog(
-                title = "Editar Componente",
-                component = state.selectedComponent,
-                uiState = state,
-                onEvent = onEvent,
-                onDismiss = { onEvent(AdminEvent.OnDismissDialog) },
-                onSave = { onEvent(AdminEvent.OnUpdateComponent(it)) }
-            )
-        }
-
-        if (state.showCreateDialog) {
-            ComponentDialog(
-                title = "Nuevo Componente",
-                component = null,
-                uiState = state,
-                onEvent = onEvent,
-                onDismiss = { onEvent(AdminEvent.OnDismissDialog) },
-                onSave = { onEvent(AdminEvent.OnCreateComponent(it)) }
-            )
         }
     }
 }
@@ -228,174 +203,4 @@ fun ComponentAdminCard(
             }
         )
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ComponentDialog(
-    title: String,
-    component: Component? = null,
-    uiState: AdminUiState,
-    onEvent: (AdminEvent) -> Unit,
-    onDismiss: () -> Unit,
-    onSave: (Component) -> Unit
-) {
-    var name by remember { mutableStateOf(component?.name ?: "") }
-    var brand by remember { mutableStateOf(
-        when(component) {
-            is Component.CPU -> component.brand
-            is Component.GPU -> component.brand
-            is Component.Motherboard -> component.brand
-            is Component.RAM -> component.brand
-            is Component.PSU -> component.brand
-            else -> ""
-        }
-    ) }
-    var price by remember { mutableStateOf(component?.price?.toString() ?: "") }
-    var category by remember { mutableStateOf(component?.category ?: "Procesador") }
-    
-    val categories = listOf("Procesador", "Tarjeta Gráfica", "Placa Base", "Memoria RAM", "Fuente de Poder")
-    var expanded by remember { mutableStateOf(false) }
-
-    val imageLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri ->
-        uri?.let { onEvent(AdminEvent.OnImageSelected(it.toString())) }
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // Selector de Imagen
-                Box(
-                    modifier = Modifier
-                        .size(120.dp)
-                        .clip(MaterialTheme.shapes.medium)
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .clickable { imageLauncher.launch("image/*") }
-                        .align(Alignment.CenterHorizontally),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (uiState.selectedImageUri != null) {
-                        AsyncImage(
-                            model = uiState.selectedImageUri,
-                            contentDescription = "Imagen seleccionada",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
-                        Icon(Icons.Default.AddAPhoto, contentDescription = "Seleccionar imagen")
-                    }
-                }
-
-                if (uiState.selectedImageUri != null && !uiState.selectedImageUri.startsWith("http")) {
-                    Text(
-                        "⚠️ Imagen local. Súbela a la nube para que sea visible en todos los dispositivos.",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.error,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Button(
-                        onClick = { onEvent(AdminEvent.OnUploadImage) },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !uiState.isUploadingImage
-                    ) {
-                        if (uiState.isUploadingImage) {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                        } else {
-                            Text("Subir a Cloudinary")
-                        }
-                    }
-                }
-
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Nombre del Producto") },
-                    placeholder = { Text("Ej: Intel Core Ultra 7") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = brand,
-                    onValueChange = { brand = it },
-                    label = { Text("Marca") },
-                    placeholder = { Text("Ej: Intel, AMD, ASUS, NVIDIA") },
-                    modifier = Modifier.fillMaxWidth(),
-                    supportingText = { Text("Obligatorio para que aparezca en el inicio") }
-                )
-                OutlinedTextField(
-                    value = price,
-                    onValueChange = { price = it },
-                    label = { Text("Precio (USD)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                
-                ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = !expanded }
-                ) {
-                    OutlinedTextField(
-                        value = category,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Categoría") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                        modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth()
-                    )
-                    ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
-                    ) {
-                        categories.forEach { item ->
-                            DropdownMenuItem(
-                                text = { Text(item) },
-                                onClick = {
-                                    category = item
-                                    expanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val priceVal = price.toDoubleOrNull() ?: 0.0
-                    val newComponent = when (category) {
-                        "Procesador" -> Component.CPU(id = component?.id ?: 0, name = name, description = "Procesador de alto rendimiento", price = priceVal, brand = brand, socket = "LGA1700", generation = "Gen 14", cores = 12, threads = 20, baseClock = "3.5GHz", boostClock = "5.0GHz", tdp = "125W")
-                        "Tarjeta Gráfica" -> Component.GPU(id = component?.id ?: 0, name = name, description = "Potencia gráfica extrema", price = priceVal, brand = brand, chipset = name, vram = "12GB", vramType = "GDDR6X", consumptionWatts = "250W")
-                        "Placa Base" -> Component.Motherboard(id = component?.id ?: 0, name = name, description = "Placa base estable", price = priceVal, brand = brand, socket = "AM5", chipset = "B650", format = "ATX", ramType = "DDR5")
-                        "Memoria RAM" -> Component.RAM(id = component?.id ?: 0, name = name, description = "Memoria ultra rápida", price = priceVal, brand = brand, type = "DDR5", capacity = "32GB", configuration = "2x16GB", speed = "6000MHz", latency = "CL30")
-                        else -> Component.PSU(id = component?.id ?: 0, name = name, description = "Fuente certificada", price = priceVal, brand = brand, wattage = 850, certification = "80+ Gold", modularity = "Full Modular")
-                    }
-                    onSave(newComponent)
-                },
-                enabled = !uiState.isSaving && name.isNotBlank() && brand.isNotBlank() && price.toDoubleOrNull() != null
-            ) {
-                if (uiState.isSaving) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                } else {
-                    Text("Guardar Componente")
-                }
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
-        }
-    )
 }
