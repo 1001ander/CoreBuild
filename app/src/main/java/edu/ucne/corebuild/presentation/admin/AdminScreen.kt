@@ -23,6 +23,7 @@ fun AdminScreen(
     viewModel: AdminViewModel = hiltViewModel(),
     onLogsClick: () -> Unit,
     onAddNewClick: () -> Unit,
+    onEditClick: (Component) -> Unit,
     onBack: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -31,6 +32,7 @@ fun AdminScreen(
         onEvent = viewModel::onEvent,
         onLogsClick = onLogsClick,
         onAddNewClick = onAddNewClick,
+        onEditClick = onEditClick,
         onBack = onBack
     )
 }
@@ -42,6 +44,7 @@ fun AdminBody(
     onEvent: (AdminEvent) -> Unit,
     onLogsClick: () -> Unit,
     onAddNewClick: () -> Unit,
+    onEditClick: (Component) -> Unit,
     onBack: () -> Unit
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -122,9 +125,8 @@ fun AdminBody(
                         ComponentAdminCard(
                             component = component,
                             onEdit = { 
-                                // Para editar, idealmente usaríamos el mismo formulario pero 
-                                // por ahora mantenemos la consistencia del flujo de navegación.
-                                // onEvent(AdminEvent.OnSelectComponent(component)) 
+                                onEvent(AdminEvent.OnSelectComponent(component))
+                                onEditClick(component)
                             },
                             onDelete = { onEvent(AdminEvent.OnDeleteComponent(component.id, component.category)) }
                         )
