@@ -10,8 +10,8 @@
 
 ---
 ## 👨🏻‍💻👨🏻‍💻 Participantes 
-Andy Vladimir Javier Familia 2021-0767
-Anderson Núñez Consoró 2019-0030
+- **Andy Vladimir Javier Familia 2021-0767**
+- **Anderson Núñez Consoró 2019-0030**
 
 ## 🚀 Funcionalidades Destacadas
 
